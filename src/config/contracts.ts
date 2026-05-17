@@ -7,6 +7,6 @@ export const BRO_CHAIN = base;
 
 export const BRO_CHAIN_ID = BRO_CHAIN.id;
 
-/** BaseBroToken on Base Mainnet — set after deploy (placeholder for local dev). */
+/** BaseBroToken on Base Mainnet (Remix deploy). */
 export const BRO_TOKEN_ADDRESS =
-  "0x0000000000000000000000000000000000000000" as const;
+  "0xE258530CdCB5742025588049aCb4C7CDFBAc794c" as const;
