@@ -3,7 +3,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useCallback, useState } from "react";
-import { waitForCallsStatus, waitForTransactionReceipt } from "wagmi/actions";
 import {
   useConfig,
   useConnection,
@@ -12,18 +11,18 @@ import {
 } from "wagmi";
 
 import {
-  BRO_CHAIN_ID,
   BRO_TOKEN_ABI,
   BRO_TOKEN_ADDRESS,
 } from "@/config/contracts";
 import { toClaimAmountWhole } from "@/lib/claimTokens";
+import { executeContractWrite } from "@/lib/eip5792ContractWrite";
 
 type ClaimTokensButtonProps = {
   /** Whole $BRO units from local unclaimed pool (not wei). */
   unclaimedWhole: number;
   disabled: boolean;
-  /** When true, prefer EIP-5792 `wallet_sendCalls` (atomic batch path). */
-  supportsAtomicBatch: boolean;
+  /** EIP-5792 atomic batch (`wallet_sendCalls`) on Base Smart Wallet. */
+  supportsBatching: boolean;
   highlight: boolean;
   onConfirmed: () => void;
 };
@@ -31,7 +30,7 @@ type ClaimTokensButtonProps = {
 export function ClaimTokensButton({
   unclaimedWhole,
   disabled,
-  supportsAtomicBatch,
+  supportsBatching,
   highlight,
   onConfirmed,
 }: ClaimTokensButtonProps) {
@@ -49,46 +48,29 @@ export function ClaimTokensButton({
     await queryClient.invalidateQueries();
   }, [queryClient]);
 
-  const executeLegacyClaim = useCallback(async () => {
-    const hash = await writeContractAsync({
-      address: BRO_TOKEN_ADDRESS,
-      abi: BRO_TOKEN_ABI,
-      functionName: "claimTokens",
-      args: [amount],
-      chainId: BRO_CHAIN_ID,
-    });
-    await waitForTransactionReceipt(config, { hash });
-  }, [amount, config, writeContractAsync]);
-
   const handleClick = useCallback(async () => {
     if (disabled || amount <= BigInt(0) || status !== "connected" || !address) {
       return;
     }
 
     try {
-      if (supportsAtomicBatch) {
-        setPhase("batch");
-        try {
-          const { id } = await sendCallsAsync({
-            chainId: BRO_CHAIN_ID,
-            calls: [
-              {
-                abi: BRO_TOKEN_ABI,
-                to: BRO_TOKEN_ADDRESS,
-                functionName: "claimTokens",
-                args: [amount],
-              },
-            ],
-          });
-          await waitForCallsStatus(config, { id });
-        } catch {
-          setPhase("legacy");
-          await executeLegacyClaim();
-        }
-      } else {
-        setPhase("legacy");
-        await executeLegacyClaim();
-      }
+      setPhase(supportsBatching ? "batch" : "legacy");
+      await executeContractWrite({
+        config,
+        supportsBatching,
+        sendCallsAsync: sendCallsAsync as Parameters<
+          typeof executeContractWrite
+        >[0]["sendCallsAsync"],
+        writeContractAsync: writeContractAsync as Parameters<
+          typeof executeContractWrite
+        >[0]["writeContractAsync"],
+        call: {
+          address: BRO_TOKEN_ADDRESS,
+          abi: BRO_TOKEN_ABI,
+          functionName: "claimTokens",
+          args: [amount],
+        },
+      });
 
       await invalidateReads();
       onConfirmed();
@@ -100,12 +82,12 @@ export function ClaimTokensButton({
     amount,
     config,
     disabled,
-    executeLegacyClaim,
     invalidateReads,
     onConfirmed,
     sendCallsAsync,
     status,
-    supportsAtomicBatch,
+    supportsBatching,
+    writeContractAsync,
   ]);
 
   const isPending =

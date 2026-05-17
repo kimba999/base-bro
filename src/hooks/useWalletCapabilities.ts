@@ -1,42 +1,38 @@
 "use client";
 
 import { useMemo } from "react";
-import { useCapabilities, useConnection } from "wagmi";
-
-import { BRO_CHAIN_ID } from "@/config/contracts";
+import { base } from "wagmi/chains";
+import { useCapabilities } from "wagmi";
 
 /**
- * EIP-5792 / `wallet_getCapabilities` — batching (atomic) and paymaster hints.
+ * EIP-5792 / `wallet_getCapabilities` — atomic batching & paymaster (Base Smart Wallet).
+ * @see https://docs.base.org/
  */
 export function useWalletCapabilities() {
-  const { address, status } = useConnection();
-
   const {
-    data,
+    data: capabilities,
     error,
     isPending,
     isFetching,
     refetch,
     isSuccess,
-  } = useCapabilities({
-    chainId: BRO_CHAIN_ID,
-    account: address,
-    query: {
-      enabled: Boolean(address) && status === "connected",
-    },
-  });
+  } = useCapabilities();
 
-  const { supportsAtomicBatch, supportsPaymasterService } = useMemo(() => {
-    const atomic = data?.atomic;
-    const supportsAtomicBatch =
-      atomic?.status === "supported" || atomic?.status === "ready";
-    const supportsPaymasterService = data?.paymasterService?.supported === true;
-    return { supportsAtomicBatch, supportsPaymasterService };
-  }, [data]);
+  const supportsBatching = useMemo(() => {
+    const atomic = capabilities?.[base.id]?.atomic;
+    return atomic?.status === "ready" || atomic?.status === "supported";
+  }, [capabilities]);
+
+  const supportsPaymasterService = useMemo(() => {
+    const paymaster = capabilities?.[base.id]?.paymasterService;
+    return paymaster?.supported === true;
+  }, [capabilities]);
 
   return {
-    capabilities: data,
-    supportsAtomicBatch,
+    capabilities,
+    supportsBatching,
+    /** Alias kept for existing call sites. */
+    supportsAtomicBatch: supportsBatching,
     supportsPaymasterService,
     error,
     isPending,

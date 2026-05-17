@@ -124,7 +124,7 @@ export function ConnectWallet() {
     isDisconnected,
     status,
   } = useConnection();
-  const { supportsAtomicBatch, supportsPaymasterService } =
+  const { supportsBatching, supportsPaymasterService } =
     useWalletCapabilities();
   const chainId = useChainId();
   const { connect, connectors, isPending: isConnectPending } = useConnect();
@@ -338,10 +338,36 @@ export function ConnectWallet() {
     );
   }
 
+  if (isReconnecting) {
+    return (
+      <motion.div className="flex min-h-screen items-center justify-center bg-background p-6">
+        <motion.div className="w-full max-w-md rounded-3xl border border-neon-magenta/50 bg-background/90 p-8 text-center shadow-[0_0_40px_rgba(255,0,255,0.25)]">
+          <h1
+            className="font-orbitron glitch-text mb-4 text-2xl font-bold tracking-wide sm:text-3xl"
+            data-text="Base Bro Mining"
+          >
+            Base Bro Mining
+          </h1>
+          <p className="font-orbitron mb-2 text-xs font-medium uppercase tracking-wide text-neon-cyan/50">
+            Reconnecting
+          </p>
+          <p className="text-sm text-neon-cyan/80">
+            Restoring your session in Base App…
+          </p>
+          <motion.span
+            className="mx-auto mt-6 block h-8 w-8 rounded-full border-2 border-neon-magenta/40 border-t-neon-orange"
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 0.9, ease: "linear" }}
+            aria-hidden
+          />
+        </motion.div>
+      </motion.div>
+    );
+  }
+
   if (!isConnected || !address) {
-    const statusLine = isReconnecting
-      ? "Restoring your session…"
-      : isConnecting || isConnectPending
+    const statusLine =
+      isConnecting || isConnectPending
         ? "Opening wallet…"
         : isDisconnected
           ? "Choose how to connect"
@@ -357,11 +383,7 @@ export function ConnectWallet() {
             Base Bro Mining
           </h1>
           <p className="font-orbitron mb-1 text-center text-xs font-medium uppercase tracking-wide text-neon-cyan/50">
-            {status === "reconnecting"
-              ? "Reconnecting"
-              : status === "connecting"
-                ? "Connecting"
-                : "Disconnected"}
+            {status === "connecting" ? "Connecting" : "Disconnected"}
           </p>
           <p className="mb-4 text-center text-sm text-neon-cyan/80">{statusLine}</p>
           <div className="flex flex-col gap-3">
@@ -369,11 +391,7 @@ export function ConnectWallet() {
               <button
                 key={connector.uid}
                 type="button"
-                disabled={
-                  isConnectPending ||
-                  isConnecting ||
-                  isReconnecting
-                }
+                disabled={isConnectPending || isConnecting}
                 onClick={() => connect({ connector })}
                 className="font-orbitron w-full rounded-xl border-2 border-neon-magenta bg-background px-4 py-3 text-sm font-medium text-neon-cyan transition hover:bg-neon-magenta/10 hover:shadow-[0_0_24px_rgba(255,0,255,0.35)] disabled:cursor-not-allowed disabled:border-neon-magenta/20 disabled:bg-background/40 disabled:text-neon-cyan/40"
               >
@@ -402,7 +420,7 @@ export function ConnectWallet() {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm text-neon-cyan/80">
           <span>{shortenAddress(address)}</span>
           <div className="flex flex-wrap items-center gap-2">
-            {supportsAtomicBatch ? (
+            {supportsBatching ? (
               <span className="rounded-full border border-neon-cyan/40 bg-background px-2 py-0.5 text-[11px] text-neon-cyan">
                 EIP-5792 batch
               </span>
@@ -648,7 +666,7 @@ export function ConnectWallet() {
         <ClaimTokensButton
           unclaimedWhole={unclaimedBz}
           disabled={!canClaim}
-          supportsAtomicBatch={supportsAtomicBatch}
+          supportsBatching={supportsBatching}
           highlight={unclaimedBz >= requiredTapsForClaim}
           onConfirmed={() => {
             resetClicks();

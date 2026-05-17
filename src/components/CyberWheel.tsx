@@ -3,19 +3,18 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useRef, useState } from "react";
-import { waitForTransactionReceipt } from "wagmi/actions";
 import {
   useConfig,
   useConnection,
   useReadContract,
+  useSendCalls,
   useWriteContract,
 } from "wagmi";
 
-import {
-  BRO_CHAIN_ID,
-  BRO_TOKEN_ABI,
-  BRO_TOKEN_ADDRESS,
-} from "@/config/contracts";
+import { useWalletCapabilities } from "@/hooks/useWalletCapabilities";
+import { executeContractWrite } from "@/lib/eip5792ContractWrite";
+
+import { BRO_TOKEN_ABI, BRO_TOKEN_ADDRESS } from "@/config/contracts";
 import {
   outcomeTypeToSectorId,
   parseWheelSpinLogs,
@@ -144,6 +143,8 @@ export function CyberWheel({
   const config = useConfig();
   const queryClient = useQueryClient();
   const { address, status } = useConnection();
+  const { supportsBatching } = useWalletCapabilities();
+  const { sendCallsAsync, isPending: isSendCallsPending } = useSendCalls();
   const { writeContractAsync, isPending: isWritePending } = useWriteContract();
 
   const [rotation, setRotation] = useState(0);
@@ -180,7 +181,8 @@ export function CyberWheel({
     typeof spinsUsedData === "bigint" ? Number(spinsUsedData) : 0;
   const spinsLeft = Math.max(0, maxSpins - spinsUsed);
 
-  const isWaitingBlockchain = waitingChain || isWritePending;
+  const isWaitingBlockchain =
+    waitingChain || isWritePending || isSendCallsPending;
   const canHack =
     !disabled &&
     !spinning &&
@@ -270,15 +272,23 @@ export function CyberWheel({
     setWaitingChain(true);
 
     try {
-      const hash = await writeContractAsync({
-        address: BRO_TOKEN_ADDRESS,
-        abi: BRO_TOKEN_ABI,
-        functionName: "spinWheel",
-        chainId: BRO_CHAIN_ID,
+      const { logs } = await executeContractWrite({
+        config,
+        supportsBatching,
+        sendCallsAsync: sendCallsAsync as Parameters<
+          typeof executeContractWrite
+        >[0]["sendCallsAsync"],
+        writeContractAsync: writeContractAsync as Parameters<
+          typeof executeContractWrite
+        >[0]["writeContractAsync"],
+        call: {
+          address: BRO_TOKEN_ADDRESS,
+          abi: BRO_TOKEN_ABI,
+          functionName: "spinWheel",
+        },
       });
 
-      const receipt = await waitForTransactionReceipt(config, { hash });
-      const parsed = parseWheelSpinLogs(receipt.logs, BRO_TOKEN_ADDRESS);
+      const parsed = parseWheelSpinLogs([...logs], BRO_TOKEN_ADDRESS);
 
       if (!parsed) {
         setSpinError("Spin confirmed but prize event was not found in logs.");
@@ -304,6 +314,8 @@ export function CyberWheel({
     queryClient,
     refetchSpins,
     runWheelAnimation,
+    sendCallsAsync,
+    supportsBatching,
     writeContractAsync,
   ]);
 
