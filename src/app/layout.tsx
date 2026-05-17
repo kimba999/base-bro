@@ -34,29 +34,37 @@ const orbitron = Orbitron({
 const BRO_TAGLINE =
   "Mine and claim $BRO on Base — streak check-ins, on-chain claims, Base Smart Wallet & MetaMask.";
 
+/** Bump when replacing `public/logo.png` to bust browser/CDN caches for favicon & OG. */
+const LOGO_ASSET_VERSION = "2";
+const LOGO_PNG = `/logo.png?v=${LOGO_ASSET_VERSION}`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: "Base Bro Mining",
   description: BRO_TAGLINE,
   icons: {
-    icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/logo.png", type: "image/png", sizes: "256x256" },
-    ],
-    apple: "/logo.png",
+    icon: [{ url: LOGO_PNG, type: "image/png", sizes: "1024x703" }],
+    apple: [{ url: LOGO_PNG, type: "image/png", sizes: "1024x703" }],
+    shortcut: LOGO_PNG,
   },
   openGraph: {
     title: "Base Bro Mining",
     description: BRO_TAGLINE,
     images: [
       {
-        url: "/logo.png",
-        width: 256,
-        height: 256,
+        url: LOGO_PNG,
+        width: 1024,
+        height: 703,
         alt: "Base Bro Mining",
         type: "image/png",
       },
     ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Base Bro Mining",
+    description: BRO_TAGLINE,
+    images: [LOGO_PNG],
   },
   other: {
     "base:app_id": "69861ce98dcaa0daf5755fcc",
