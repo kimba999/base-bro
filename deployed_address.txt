@@ -1,0 +1,2 @@
+# BazaToken on Base Mainnet (same value as `BAZA_TOKEN_ADDRESS` in `src/config/contracts.ts`).
+0x685cD8bBC7EDac563024D798f19D12fdb2A89887

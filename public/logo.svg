@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="BAZA">
+  <rect width="1024" height="1024" fill="#0052FF"/>
+  <text
+    x="512"
+    y="548"
+    text-anchor="middle"
+    font-family="Inter, Arial, Helvetica, sans-serif"
+    font-size="248"
+    font-weight="700"
+    fill="#FFFFFF"
+    letter-spacing="-0.02em"
+  >BAZA</text>
+</svg>

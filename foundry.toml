@@ -1,0 +1,9 @@
+# Minimal Foundry root for `contracts/BazaToken.sol` (Remix deploy + verify).
+# Nested `contract/` is a separate Foundry app (other contracts).
+[profile.default]
+src = "contracts"
+out = "forge-artifacts"
+libs = []
+# Must match Remix “Compiler” version or Basescan verification will fail.
+# Change to e.g. "0.8.26" if that is what you used in Remix, then `forge build` again.
+solc_version = "0.8.20"

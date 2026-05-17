@@ -1,0 +1,10 @@
+node_modules/
+.next/
+.turbo/
+.env
+.env.*
+!.env.example
+.DS_Store
+contract/cache/
+contract/out/
+contract/broadcast/
