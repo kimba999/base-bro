@@ -1,14 +1,6 @@
 "use client";
 
-import { MouseEvent, useEffect, useMemo, useState } from "react";
-
-type Particle = {
-  id: number;
-  x: number;
-  y: number;
-  dx: number;
-  dy: number;
-};
+import { MouseEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 const MAX_ENERGY = 500;
 const ENERGY_REGEN_PER_SEC = 2;
@@ -16,6 +8,8 @@ const CLICKS_STORAGE_KEY = "base-coin-clicks";
 
 /** Minimum taps before the user can claim mined $BRO to wallet. */
 export const REQUIRED_TAPS_FOR_CLAIM = 5;
+
+const DEFAULT_BUFF_MS = 5 * 60 * 1000;
 
 export function useClicker() {
   const [clicks, setClicks] = useState(() => {
@@ -26,7 +20,10 @@ export function useClicker() {
   });
   const [energy, setEnergy] = useState(MAX_ENERGY);
   const [coinPressed, setCoinPressed] = useState(false);
-  const [particles, setParticles] = useState<Particle[]>([]);
+  const [tapMultiplier, setTapMultiplier] = useState(1);
+  const [tapMultiplierUntil, setTapMultiplierUntil] = useState(0);
+  const [streakShieldUntil, setStreakShieldUntil] = useState(0);
+  const [screenGlitch, setScreenGlitch] = useState(false);
 
   useEffect(() => {
     window.localStorage.setItem(CLICKS_STORAGE_KEY, String(clicks));
@@ -40,6 +37,20 @@ export function useClicker() {
     return () => window.clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    if (tapMultiplierUntil <= Date.now()) return;
+    const id = window.setTimeout(() => {
+      setTapMultiplier(1);
+      setTapMultiplierUntil(0);
+    }, tapMultiplierUntil - Date.now());
+    return () => window.clearTimeout(id);
+  }, [tapMultiplierUntil]);
+
+  const activeTapMultiplier =
+    tapMultiplierUntil > Date.now() ? tapMultiplier : 1;
+
+  const streakShieldActive = streakShieldUntil > Date.now();
+
   const canClick = energy > 0;
 
   const energyPercent = useMemo(() => (energy / MAX_ENERGY) * 100, [energy]);
@@ -51,36 +62,54 @@ export function useClicker() {
     [clicks],
   );
 
+  const addUnclaimed = useCallback((amount: number) => {
+    if (amount <= 0) return;
+    setClicks((prev) => prev + amount);
+  }, []);
+
+  const spendUnclaimed = useCallback((amount: number) => {
+    if (amount <= 0) return true;
+    let ok = false;
+    setClicks((prev) => {
+      if (prev < amount) return prev;
+      ok = true;
+      return prev - amount;
+    });
+    return ok;
+  }, []);
+
+  const refillEnergy = useCallback(() => {
+    setEnergy(MAX_ENERGY);
+  }, []);
+
+  const activateTapMultiplier = useCallback(
+    (durationMs = DEFAULT_BUFF_MS) => {
+      setTapMultiplier(2);
+      setTapMultiplierUntil(Date.now() + durationMs);
+    },
+    [],
+  );
+
+  const activateStreakShield = useCallback((durationMs = DEFAULT_BUFF_MS) => {
+    setStreakShieldUntil(Date.now() + durationMs);
+  }, []);
+
+  const triggerScreenGlitch = useCallback((durationMs = 2200) => {
+    setScreenGlitch(true);
+    window.setTimeout(() => setScreenGlitch(false), durationMs);
+  }, []);
+
   const registerClick = (event: MouseEvent<HTMLButtonElement>) => {
     if (!canClick) return;
 
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    const id = Date.now() + Math.floor(Math.random() * 1000);
-
-    setClicks((prev) => prev + 1);
+    const gain = activeTapMultiplier;
+    setClicks((prev) => prev + gain);
     setEnergy((prev) => Math.max(0, prev - 1));
     setCoinPressed(true);
-
-    setParticles((prev) => [
-      ...prev,
-      {
-        id,
-        x,
-        y,
-        dx: (Math.random() - 0.5) * 70,
-        dy: -70 - Math.random() * 40,
-      },
-    ]);
 
     window.setTimeout(() => {
       setCoinPressed(false);
     }, 120);
-
-    window.setTimeout(() => {
-      setParticles((prev) => prev.filter((particle) => particle.id !== id));
-    }, 850);
   };
 
   const resetClicks = () => setClicks(0);
@@ -94,8 +123,16 @@ export function useClicker() {
     requiredTapsForClaim: REQUIRED_TAPS_FOR_CLAIM,
     canClick,
     coinPressed,
-    particles,
+    activeTapMultiplier,
+    streakShieldActive,
+    screenGlitch,
     registerClick,
     resetClicks,
+    addUnclaimed,
+    spendUnclaimed,
+    refillEnergy,
+    activateTapMultiplier,
+    activateStreakShield,
+    triggerScreenGlitch,
   };
 }

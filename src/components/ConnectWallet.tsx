@@ -1,6 +1,7 @@
 "use client";
 
 import { ClaimTokensButton } from "@/components/ClaimTokensButton";
+import { CyberWheel } from "@/components/CyberWheel";
 import { StreakVisual } from "@/components/StreakVisual";
 import {
   BRO_CHAIN,
@@ -10,8 +11,16 @@ import {
 import { useClicker } from "@/hooks/useClicker";
 import { useWalletCapabilities } from "@/hooks/useWalletCapabilities";
 import { formatBzCompact, formatBzExact } from "@/lib/bzFormat";
-import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { motion } from "framer-motion";
+import {
+  type MouseEvent,
+  type PointerEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   useChainId,
   useConnect,
@@ -138,11 +147,23 @@ export function ConnectWallet() {
     claimTapProgressPercent,
     requiredTapsForClaim,
     canClick,
-    particles,
+    activeTapMultiplier,
+    streakShieldActive,
+    screenGlitch,
     registerClick,
     resetClicks,
+    addUnclaimed,
+    spendUnclaimed,
+    refillEnergy,
+    activateTapMultiplier,
+    activateStreakShield,
+    triggerScreenGlitch,
   } = useClicker();
   const txActionRef = useRef<"checkin" | null>(null);
+  const floatingIdRef = useRef(0);
+  const [floatingTexts, setFloatingTexts] = useState<
+    { id: number; x: number; y: number }[]
+  >([]);
   const [nowSec, setNowSec] = useState(() =>
     Math.floor(Date.now() / 1000),
   );
@@ -200,6 +221,7 @@ export function ConnectWallet() {
     typeof balanceData === "bigint" ? balanceData : BigInt(0);
   const balanceCompact = formatBzCompact(balanceWei);
   const balanceExact = formatBzExact(balanceWei);
+  const walletBroWhole = Number(balanceWei / BigInt(10 ** 18));
 
   const lastCheckInSec =
     typeof lastCheckInData === "bigint" ? lastCheckInData : BigInt(0);
@@ -228,6 +250,26 @@ export function ConnectWallet() {
     !isCheckInPending;
 
   const coinInteractive = canClick && isCorrectNetwork;
+
+  const handleCoinTap = useCallback(
+    (event: PointerEvent<HTMLButtonElement>) => {
+      if (!coinInteractive) return;
+
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      const id = ++floatingIdRef.current;
+
+      setFloatingTexts((prev) => [...prev, { id, x, y }]);
+      window.setTimeout(() => {
+        setFloatingTexts((prev) => prev.filter((t) => t.id !== id));
+      }, 1000);
+
+      registerClick(event as unknown as MouseEvent<HTMLButtonElement>);
+    },
+    [coinInteractive, registerClick],
+  );
+
   const coinShadow =
     coinPressedLocal && coinInteractive
       ? COIN_SHADOW_PRESSED
@@ -306,8 +348,14 @@ export function ConnectWallet() {
 
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-6">
-        <div className="w-full max-w-md rounded-3xl border border-neon-magenta/50 bg-background/90 p-6 shadow-[0_0_40px_rgba(255,0,255,0.25)]">
-          <p className="mb-1 text-center text-xs font-medium uppercase tracking-wide text-neon-cyan/50">
+        <motion.div className="w-full max-w-md rounded-3xl border border-neon-magenta/50 bg-background/90 p-6 shadow-[0_0_40px_rgba(255,0,255,0.25)]">
+          <h1
+            className="font-orbitron glitch-text mb-5 text-center text-2xl font-bold tracking-wide sm:text-3xl"
+            data-text="Base Bro Mining"
+          >
+            Base Bro Mining
+          </h1>
+          <p className="font-orbitron mb-1 text-center text-xs font-medium uppercase tracking-wide text-neon-cyan/50">
             {status === "reconnecting"
               ? "Reconnecting"
               : status === "connecting"
@@ -326,7 +374,7 @@ export function ConnectWallet() {
                   isReconnecting
                 }
                 onClick={() => connect({ connector })}
-                className="w-full rounded-xl border-2 border-neon-magenta bg-background px-4 py-3 text-sm font-medium text-neon-cyan transition hover:bg-neon-magenta/10 hover:shadow-[0_0_24px_rgba(255,0,255,0.35)] disabled:cursor-not-allowed disabled:border-neon-magenta/20 disabled:bg-background/40 disabled:text-neon-cyan/40"
+                className="font-orbitron w-full rounded-xl border-2 border-neon-magenta bg-background px-4 py-3 text-sm font-medium text-neon-cyan transition hover:bg-neon-magenta/10 hover:shadow-[0_0_24px_rgba(255,0,255,0.35)] disabled:cursor-not-allowed disabled:border-neon-magenta/20 disabled:bg-background/40 disabled:text-neon-cyan/40"
               >
                 {isConnectPending || isConnecting
                   ? "Connecting…"
@@ -334,14 +382,22 @@ export function ConnectWallet() {
               </button>
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-6 text-neon-cyan">
-      <div className="w-full max-w-xl rounded-3xl border border-neon-magenta/40 bg-background/80 px-8 py-8 shadow-[0_0_60px_rgba(255,0,255,0.2)] backdrop-blur sm:px-10 sm:py-9">
+    <main
+      className={`flex min-h-screen items-center justify-center bg-background px-4 py-6 text-neon-cyan ${screenGlitch ? "screen-glitch" : ""}`}
+    >
+      <motion.div className="w-full max-w-xl rounded-3xl border border-neon-magenta/40 bg-background/80 px-8 py-8 shadow-[0_0_60px_rgba(255,0,255,0.2)] backdrop-blur sm:px-10 sm:py-9">
+        <h1
+          className="font-orbitron glitch-text mb-6 text-center text-2xl font-bold tracking-wide sm:text-3xl"
+          data-text="Base Bro Mining"
+        >
+          Base Bro Mining
+        </h1>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm text-neon-cyan/80">
           <span>{shortenAddress(address)}</span>
           <div className="flex flex-wrap items-center gap-2">
@@ -385,17 +441,17 @@ export function ConnectWallet() {
           </div>
         ) : null}
 
-        <div className="mb-5 grid grid-cols-2 gap-3 rounded-2xl border border-neon-magenta/50 bg-background/80 p-4 text-sm text-neon-cyan">
+        <div className="font-orbitron mb-5 grid grid-cols-2 gap-3 rounded-2xl border border-neon-magenta/50 bg-background/80 p-4 text-sm text-neon-cyan">
           <p>
             🔥 Streak:{" "}
-            <span className="font-semibold text-neon-orange">{streakLabel}</span>
+            <span className="font-bold text-neon-orange">{streakLabel}</span>
           </p>
           <p
-            className="max-w-[55%] justify-self-end text-right font-mono text-xs leading-snug sm:text-sm"
+            className="max-w-[55%] justify-self-end text-right text-xs leading-snug sm:text-sm"
             title={`${balanceExact} $BRO`}
           >
             <span className="block text-neon-cyan/60">💰 Total $BRO</span>
-            <span className="break-all font-semibold text-neon-orange">
+            <span className="break-all text-base font-bold text-neon-orange sm:text-lg">
               {balanceCompact}
             </span>
           </p>
@@ -403,14 +459,27 @@ export function ConnectWallet() {
 
         <StreakVisual currentStreak={streakBig} />
 
-        <p className="mb-3 text-center text-lg font-semibold text-neon-orange">
+        <div className="mb-2 flex flex-wrap justify-center gap-2">
+          {activeTapMultiplier > 1 ? (
+            <span className="rounded-full border border-neon-orange/60 bg-background px-2 py-0.5 text-[10px] font-bold text-neon-orange">
+              TAP x{activeTapMultiplier}
+            </span>
+          ) : null}
+          {streakShieldActive ? (
+            <span className="rounded-full border border-neon-magenta/60 bg-background px-2 py-0.5 text-[10px] font-bold text-neon-magenta">
+              STREAK SHIELD
+            </span>
+          ) : null}
+        </div>
+
+        <p className="font-orbitron mb-3 text-center text-lg font-bold text-neon-orange">
           Unclaimed $BRO: {unclaimedBz}
         </p>
 
         <motion.div className="mb-5">
           <motion.div className="mb-2 flex justify-between text-xs text-neon-cyan/60">
             <span>Taps to claim</span>
-            <span>
+            <span className="font-orbitron font-bold text-neon-orange">
               {tapsTowardClaim}/{requiredTapsForClaim}
             </span>
           </motion.div>
@@ -436,22 +505,23 @@ export function ConnectWallet() {
           />
           <motion.button
             type="button"
-            onClick={registerClick}
             disabled={!coinInteractive}
             onPointerEnter={() => coinInteractive && setCoinHover(true)}
             onPointerLeave={() => {
               setCoinHover(false);
               setCoinPressedLocal(false);
             }}
-            onPointerDown={() =>
-              coinInteractive && setCoinPressedLocal(true)
-            }
+            onPointerDown={(event) => {
+              if (!coinInteractive) return;
+              setCoinPressedLocal(true);
+              handleCoinTap(event);
+            }}
             onPointerUp={() => setCoinPressedLocal(false)}
             onPointerCancel={() => setCoinPressedLocal(false)}
             whileHover={coinInteractive ? { scale: 1.02 } : undefined}
             whileTap={coinInteractive ? { scale: 0.95 } : undefined}
             transition={{ type: "spring", stiffness: 480, damping: 28 }}
-            className="relative z-10 h-56 w-56 cursor-pointer overflow-hidden rounded-full disabled:cursor-not-allowed disabled:opacity-40"
+            className="relative z-10 h-56 w-56 cursor-pointer overflow-visible rounded-full disabled:cursor-not-allowed disabled:opacity-40"
             style={{ boxShadow: coinShadow }}
           >
             <div
@@ -491,7 +561,7 @@ export function ConnectWallet() {
               }}
             >
               <span
-                className="relative text-3xl font-black tracking-[0.14em] sm:text-4xl sm:tracking-[0.16em]"
+                className="font-orbitron relative text-3xl font-black tracking-[0.14em] sm:text-4xl sm:tracking-[0.16em]"
                 style={{
                   color: NEON_ORANGE,
                   textShadow: [
@@ -507,40 +577,43 @@ export function ConnectWallet() {
               </span>
             </div>
 
-            <AnimatePresence>
-              {particles.map((particle) => (
-                <motion.span
-                  key={particle.id}
-                  initial={{
-                    opacity: 1,
-                    x: particle.x - 12,
-                    y: particle.y - 12,
-                    scale: 0.8,
-                  }}
-                  animate={{
-                    opacity: 0,
-                    x: particle.x + particle.dx,
-                    y: particle.y + particle.dy,
-                    scale: 1.15,
-                  }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.75, ease: "easeOut" }}
-                  className="pointer-events-none absolute z-[3] text-lg font-bold text-neon-cyan"
-                >
-                  +1
-                </motion.span>
-              ))}
-            </AnimatePresence>
+            {floatingTexts.map((tap) => (
+              <span
+                key={tap.id}
+                className={`font-orbitron pointer-events-none absolute z-[3] animate-fade-out-up text-lg font-bold drop-shadow-[0_0_10px_rgba(0,255,255,0.85)] ${
+                  tap.id % 2 === 0 ? "text-neon-cyan" : "text-neon-orange"
+                }`}
+                style={{
+                  left: tap.x,
+                  top: tap.y,
+                  transform: "translate(-50%, -50%)",
+                }}
+              >
+                +1
+              </span>
+            ))}
           </motion.button>
         </div>
 
-        <div className="mb-4">
-          <div className="mb-2 flex justify-between text-xs text-neon-cyan/60">
+        <CyberWheel
+          unclaimedBro={unclaimedBz}
+          walletBroWhole={walletBroWhole}
+          disabled={!isCorrectNetwork}
+          onAddUnclaimed={addUnclaimed}
+          onRefillEnergy={refillEnergy}
+          onActivateTapMultiplier={activateTapMultiplier}
+          onActivateStreakShield={activateStreakShield}
+          onTriggerGlitch={triggerScreenGlitch}
+          onSpendUnclaimed={spendUnclaimed}
+        />
+
+        <motion.div className="mb-4">
+          <motion.div className="mb-2 flex justify-between text-xs text-neon-cyan/60">
             <span>Energy</span>
-            <span>
+            <span className="font-orbitron font-bold text-neon-orange">
               {energy}/{maxEnergy}
             </span>
-          </div>
+          </motion.div>
           <div className="h-3 w-full overflow-hidden rounded-full bg-background/60">
             <motion.div
               className="h-full bg-gradient-to-r from-neon-magenta to-neon-cyan"
@@ -549,7 +622,7 @@ export function ConnectWallet() {
             />
           </div>
           <p className="mt-2 text-xs text-neon-cyan/50">+2 energy per second</p>
-        </div>
+        </motion.div>
 
         <button
           type="button"
@@ -557,7 +630,7 @@ export function ConnectWallet() {
           disabled={
             isCheckInPending || !isCorrectNetwork || !canDailyCheckIn
           }
-          className="mb-2 w-full rounded-xl border-2 border-neon-magenta bg-background px-4 py-3 text-sm font-medium text-neon-cyan transition hover:bg-neon-magenta/10 hover:shadow-[0_0_24px_rgba(255,0,255,0.35)] disabled:cursor-not-allowed disabled:border-neon-magenta/20 disabled:bg-background/40 disabled:text-neon-cyan/40"
+          className="font-orbitron mb-2 w-full rounded-xl border-2 border-neon-magenta bg-background px-4 py-3 text-sm font-semibold text-neon-cyan transition hover:bg-neon-magenta/10 hover:shadow-[0_0_24px_rgba(255,0,255,0.35)] disabled:cursor-not-allowed disabled:border-neon-magenta/20 disabled:bg-background/40 disabled:text-neon-cyan/40"
         >
           {isCheckInPending ? "Transaction Pending..." : "Daily Check-in"}
         </button>
@@ -565,7 +638,7 @@ export function ConnectWallet() {
         {!canDailyCheckIn && isCorrectNetwork && lastCheckInSec > BigInt(0) ? (
           <p className="mb-3 text-center text-xs text-neon-cyan/60">
             Следующий чекин через{" "}
-            <span className="font-mono text-neon-cyan">
+            <span className="font-orbitron font-bold text-neon-orange">
               {formatCountdownSeconds(cooldownRemaining)}
             </span>
           </p>
@@ -580,7 +653,7 @@ export function ConnectWallet() {
           highlight={unclaimedBz >= requiredTapsForClaim}
           onConfirmed={() => resetClicks()}
         />
-      </div>
+      </motion.div>
     </main>
   );
 }

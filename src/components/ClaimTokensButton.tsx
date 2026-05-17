@@ -102,7 +102,7 @@ export function ClaimTokensButton({
       type="button"
       onClick={() => void handleClick()}
       disabled={disabled || isPending}
-      className={`w-full rounded-xl border-2 px-4 py-3 text-sm font-semibold text-neon-orange transition ${
+      className={`font-orbitron w-full rounded-xl border-2 px-4 py-3 text-sm font-semibold text-neon-orange transition ${
         highlight
           ? "border-neon-magenta bg-background shadow-[0_0_30px_rgba(255,0,255,0.45)] hover:shadow-[0_0_40px_rgba(255,0,255,0.6)]"
           : "border-neon-magenta/50 bg-background/80 hover:border-neon-magenta"
@@ -118,7 +118,12 @@ export function ClaimTokensButton({
           {phase === "batch" ? "Confirm batch…" : "Transaction pending…"}
         </span>
       ) : (
-        "Claim to wallet"
+        <span
+          className="glitch-text glitch-hover inline-block"
+          data-text="Claim to wallet"
+        >
+          Claim to wallet
+        </span>
       )}
     </button>
   );

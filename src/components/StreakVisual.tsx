@@ -27,7 +27,7 @@ export function StreakVisual({ currentStreak }: StreakVisualProps) {
 
   return (
     <motion.div className="mb-5 sm:mb-6">
-      <p className="mb-2 text-center text-xs font-medium uppercase tracking-wide text-neon-cyan/70">
+      <p className="font-orbitron mb-2 text-center text-xs font-semibold uppercase tracking-wide text-neon-cyan/70">
         7-day $BRO streak
       </p>
       <motion.div className="flex justify-between gap-1 sm:gap-2">
@@ -40,7 +40,7 @@ export function StreakVisual({ currentStreak }: StreakVisualProps) {
           const inviteFirstDay = streakZero && day === 1;
 
           const baseCircle =
-            "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-sm font-semibold transition sm:h-12 sm:w-12";
+            "font-orbitron relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold transition sm:h-12 sm:w-12";
 
           let className = baseCircle;
 
