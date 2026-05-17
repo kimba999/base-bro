@@ -12,12 +12,12 @@ import {
 } from "wagmi";
 
 import {
-  BAZA_TOKEN_ABI,
-  BAZA_TOKEN_ADDRESS,
+  BRO_TOKEN_ABI,
+  BRO_TOKEN_ADDRESS,
 } from "@/config/contracts";
 
 type ClaimTokensButtonProps = {
-  /** Whole $BAZA units to mint (matches `claimTokens(uint256 amount)`). */
+  /** Whole $BRO units to mint (matches `claimTokens(uint256 amount)`). */
   amount: bigint;
   disabled: boolean;
   /** When true, prefer EIP-5792 `wallet_sendCalls` (atomic batch path). */
@@ -57,8 +57,8 @@ export function ClaimTokensButton({
         const { id } = await sendCallsAsync({
           calls: [
             {
-              abi: BAZA_TOKEN_ABI,
-              to: BAZA_TOKEN_ADDRESS,
+              abi: BRO_TOKEN_ABI,
+              to: BRO_TOKEN_ADDRESS,
               functionName: "claimTokens",
               args: [amount],
             },
@@ -68,8 +68,8 @@ export function ClaimTokensButton({
       } else {
         setPhase("legacy");
         const hash = await writeContractAsync({
-          address: BAZA_TOKEN_ADDRESS,
-          abi: BAZA_TOKEN_ABI,
+          address: BRO_TOKEN_ADDRESS,
+          abi: BRO_TOKEN_ABI,
           functionName: "claimTokens",
           args: [amount],
         });

@@ -9,7 +9,7 @@ export function formatBzExact(wei: bigint): string {
 }
 
 /**
- * Compact display: whole $BAZA ≥ 1000 → "1.2k", ≥ 1_000_000 → "1.2M" (one decimal).
+ * Compact display: whole $BRO ≥ 1000 → "1.2k", ≥ 1_000_000 → "1.2M" (one decimal).
  * Tooltip should use {@link formatBzExact}.
  */
 export function formatBzCompact(wei: bigint): string {

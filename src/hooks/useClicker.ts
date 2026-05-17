@@ -14,7 +14,7 @@ const MAX_ENERGY = 500;
 const ENERGY_REGEN_PER_SEC = 2;
 const CLICKS_STORAGE_KEY = "base-coin-clicks";
 
-/** Minimum taps before the user can claim mined $BAZA to wallet. */
+/** Minimum taps before the user can claim mined $BRO to wallet. */
 export const REQUIRED_TAPS_FOR_CLAIM = 5;
 
 export function useClicker() {

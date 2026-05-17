@@ -28,8 +28,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 const MANIFEST_PATH = join(ROOT, "public/.well-known/farcaster.json");
 const ID_REGISTRY = "0x00000000Fc6c5F01Fc4011634a6f475c76e6e938";
-const DEFAULT_DOMAIN = "baza-mining-app.vercel.app";
-const DEFAULT_ORIGIN = "https://baza-mining-app.vercel.app";
+const DEFAULT_DOMAIN = "base-bro.vercel.app";
+const DEFAULT_ORIGIN = "https://base-bro.vercel.app";
 
 const idRegistryAbi = [
   {
@@ -157,7 +157,7 @@ async function signAccountAssociation({ fid, custodyAddress, domain, privateKey 
 }
 
 async function promptInteractiveConfig() {
-  p.intro("Farcaster manifest — BAZA Mining");
+  p.intro("Farcaster manifest — Base Bro Mining");
 
   p.log.info(
     "@farcaster/mini-app-cli is not on npm yet. This wizard signs the manifest locally (JFS + custody key), same result as Warpcast.",
@@ -165,7 +165,7 @@ async function promptInteractiveConfig() {
 
   const name = await p.text({
     message: "App name",
-    initialValue: "BAZA Mining",
+    initialValue: "Base Bro Mining",
     validate: (v) => (v?.trim() ? undefined : "Required"),
   });
   if (p.isCancel(name)) process.exit(0);
@@ -242,7 +242,7 @@ async function main() {
     domain = normalizeDomain(process.env.FARCASTER_DOMAIN || DEFAULT_DOMAIN);
     fidFromEnv = process.env.FARCASTER_FID;
     frame = buildFrameConfig({
-      name: "BAZA Mining",
+      name: "Base Bro Mining",
       origin: DEFAULT_ORIGIN,
       iconPath: "logo.png",
     });

@@ -1,4 +1,4 @@
-export const BAZA_TOKEN_ABI = [
+export const BRO_TOKEN_ABI = [
   {
     "type": "constructor",
     "inputs": [],

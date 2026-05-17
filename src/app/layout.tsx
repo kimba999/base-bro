@@ -25,13 +25,13 @@ const geistMono = Geist_Mono({
 });
 
 /** Short line for meta + social cards (keep in sync with product copy). */
-const BAZA_TAGLINE =
-  "Mine and claim $BAZA on Base — streak check-ins, on-chain claims, Base Smart Wallet & MetaMask.";
+const BRO_TAGLINE =
+  "Mine and claim $BRO on Base — streak check-ins, on-chain claims, Base Smart Wallet & MetaMask.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "BAZA Mining",
-  description: BAZA_TAGLINE,
+  title: "Base Bro Mining",
+  description: BRO_TAGLINE,
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -40,14 +40,14 @@ export const metadata: Metadata = {
     apple: "/logo.png",
   },
   openGraph: {
-    title: "BAZA Mining",
-    description: BAZA_TAGLINE,
+    title: "Base Bro Mining",
+    description: BRO_TAGLINE,
     images: [
       {
         url: "/logo.png",
         width: 256,
         height: 256,
-        alt: "BAZA Mining",
+        alt: "Base Bro Mining",
         type: "image/png",
       },
     ],

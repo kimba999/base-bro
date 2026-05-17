@@ -28,7 +28,7 @@ export function StreakVisual({ currentStreak }: StreakVisualProps) {
   return (
     <div className="mb-5 sm:mb-6">
       <p className="mb-2 text-center text-xs font-medium uppercase tracking-wide text-slate-400">
-        7-day $BAZA streak
+        7-day $BRO streak
       </p>
       <div className="flex justify-between gap-1 sm:gap-2">
         {days.map((day) => {

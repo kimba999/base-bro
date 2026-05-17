@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useCapabilities, useConnection } from "wagmi";
 
-import { BAZA_CHAIN_ID } from "@/config/contracts";
+import { BRO_CHAIN_ID } from "@/config/contracts";
 
 /**
  * EIP-5792 / `wallet_getCapabilities` — batching (atomic) and paymaster hints.
@@ -19,7 +19,7 @@ export function useWalletCapabilities() {
     refetch,
     isSuccess,
   } = useCapabilities({
-    chainId: BAZA_CHAIN_ID,
+    chainId: BRO_CHAIN_ID,
     account: address,
     query: {
       enabled: Boolean(address) && status === "connected",

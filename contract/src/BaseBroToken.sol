@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
-contract BAZA is ERC20 {
+contract BaseBroToken is ERC20 {
     uint256 public constant DAILY_REWARD = 10 * 10 ** 18;
 
     mapping(address => uint256) public lastCheckIn;
@@ -12,7 +12,7 @@ contract BAZA is ERC20 {
     event CheckedIn(address indexed user, uint256 streak, uint256 mintedAmount);
     event TokensClaimed(address indexed user, uint256 amount);
 
-    constructor() ERC20("BAZA", "BAZA") {}
+    constructor() ERC20("Base Bro", "BRO") {}
 
     function dailyCheckIn() external {
         uint256 last = lastCheckIn[msg.sender];

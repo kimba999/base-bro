@@ -3,9 +3,9 @@
 import { ClaimTokensButton } from "@/components/ClaimTokensButton";
 import { StreakVisual } from "@/components/StreakVisual";
 import {
-  BAZA_CHAIN,
-  BAZA_TOKEN_ABI,
-  BAZA_TOKEN_ADDRESS,
+  BRO_CHAIN,
+  BRO_TOKEN_ABI,
+  BRO_TOKEN_ADDRESS,
 } from "@/config/contracts";
 import { useClicker } from "@/hooks/useClicker";
 import { useWalletCapabilities } from "@/hooks/useWalletCapabilities";
@@ -23,20 +23,20 @@ import {
   useWriteContract,
 } from "wagmi";
 
-/** Repeating tile for watermark behind the BAZA coin (white fill; layer uses opacity 0.05). */
-const BAZA_WATERMARK_DATA_URI =
+/** Repeating tile for watermark behind the BRO coin (white fill; layer uses opacity 0.05). */
+const BRO_WATERMARK_DATA_URI =
   'url("data:image/svg+xml,' +
   encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="104" height="72" viewBox="0 0 104 72">' +
-      '<text x="6" y="22" fill="white" font-size="10" font-weight="700" font-family="ui-sans-serif,system-ui,sans-serif" letter-spacing="0.14em">BAZA</text>' +
-      '<text x="54" y="50" fill="white" font-size="10" font-weight="700" font-family="ui-sans-serif,system-ui,sans-serif" letter-spacing="0.14em">BAZA</text>' +
+      '<text x="6" y="22" fill="white" font-size="10" font-weight="700" font-family="ui-sans-serif,system-ui,sans-serif" letter-spacing="0.14em">BRO</text>' +
+      '<text x="54" y="50" fill="white" font-size="10" font-weight="700" font-family="ui-sans-serif,system-ui,sans-serif" letter-spacing="0.14em">BRO</text>' +
       "</svg>",
   ) +
   '")';
 
 const succeededTxHashes = new Set<string>();
 
-/** Must match `BazaToken.MIN_CHECKIN_INTERVAL` after redeploy (24 hours). */
+/** Must match `BaseBroToken` daily check-in interval after redeploy (24 hours). */
 const CHECKIN_COOLDOWN_SEC = BigInt(86400);
 /** Must match `STREAK_GRACE_PERIOD` in contract (48 hours). */
 const STREAK_GRACE_SEC = BigInt(172800);
@@ -147,11 +147,11 @@ export function ConnectWallet() {
   const [coinHover, setCoinHover] = useState(false);
   const [coinPressedLocal, setCoinPressedLocal] = useState(false);
 
-  const isCorrectNetwork = chainId === BAZA_CHAIN.id;
+  const isCorrectNetwork = chainId === BRO_CHAIN.id;
 
   const { data: streakData, refetch: refetchStreak } = useReadContract({
-    address: BAZA_TOKEN_ADDRESS,
-    abi: BAZA_TOKEN_ABI,
+    address: BRO_TOKEN_ADDRESS,
+    abi: BRO_TOKEN_ABI,
     functionName: "currentStreak",
     args: address ? [address] : undefined,
     query: {
@@ -161,8 +161,8 @@ export function ConnectWallet() {
   });
 
   const { data: balanceData, refetch: refetchBalance } = useReadContract({
-    address: BAZA_TOKEN_ADDRESS,
-    abi: BAZA_TOKEN_ABI,
+    address: BRO_TOKEN_ADDRESS,
+    abi: BRO_TOKEN_ABI,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
     query: {
@@ -173,8 +173,8 @@ export function ConnectWallet() {
 
   const { data: lastCheckInData, refetch: refetchLastCheckIn } =
     useReadContract({
-      address: BAZA_TOKEN_ADDRESS,
-      abi: BAZA_TOKEN_ABI,
+      address: BRO_TOKEN_ADDRESS,
+      abi: BRO_TOKEN_ABI,
       functionName: "lastCheckIn",
       args: address ? [address] : undefined,
       query: {
@@ -277,8 +277,8 @@ export function ConnectWallet() {
     if (isCheckInPending || !isCorrectNetwork || !canDailyCheckIn) return;
     txActionRef.current = "checkin";
     writeContract({
-      address: BAZA_TOKEN_ADDRESS,
-      abi: BAZA_TOKEN_ABI,
+      address: BRO_TOKEN_ADDRESS,
+      abi: BRO_TOKEN_ABI,
       functionName: "dailyCheckIn",
     });
   };
@@ -300,7 +300,7 @@ export function ConnectWallet() {
         ? "Opening wallet…"
         : isDisconnected
           ? "Choose how to connect"
-          : "Connect wallet to start mining BAZA";
+          : "Connect wallet to start mining BRO";
 
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950 p-6">
@@ -366,11 +366,11 @@ export function ConnectWallet() {
         {!isCorrectNetwork ? (
           <button
             type="button"
-            onClick={() => switchChain({ chainId: BAZA_CHAIN.id })}
+            onClick={() => switchChain({ chainId: BRO_CHAIN.id })}
             disabled={isSwitchingChain}
             className="mb-4 w-full rounded-xl bg-orange-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-orange-500 disabled:cursor-not-allowed disabled:bg-slate-600"
           >
-            {isSwitchingChain ? "Switching..." : `Switch to ${BAZA_CHAIN.name}`}
+            {isSwitchingChain ? "Switching..." : `Switch to ${BRO_CHAIN.name}`}
           </button>
         ) : null}
 
@@ -387,9 +387,9 @@ export function ConnectWallet() {
           <p>🔥 Streak: {streakLabel}</p>
           <p
             className="max-w-[55%] justify-self-end text-right font-mono text-xs leading-snug sm:text-sm"
-            title={`${balanceExact} $BAZA`}
+            title={`${balanceExact} $BRO`}
           >
-            <span className="block text-slate-400">💰 Total $BAZA</span>
+            <span className="block text-slate-400">💰 Total $BRO</span>
             <span className="break-all text-slate-100">{balanceCompact}</span>
           </p>
         </div>
@@ -397,7 +397,7 @@ export function ConnectWallet() {
         <StreakVisual currentStreak={streakBig} />
 
         <p className="mb-3 text-center text-lg font-semibold text-blue-300">
-          Unclaimed $BAZA: {unclaimedBz}
+          Unclaimed $BRO: {unclaimedBz}
         </p>
 
         <motion.div className="mb-5">
@@ -421,7 +421,7 @@ export function ConnectWallet() {
             className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[min(34rem,130vw)] w-[min(40rem,96vw)] opacity-[0.05] select-none"
             style={{
               transform: "translate(-50%, -50%) rotate(-18deg)",
-              backgroundImage: BAZA_WATERMARK_DATA_URI,
+              backgroundImage: BRO_WATERMARK_DATA_URI,
               backgroundSize: "104px 72px",
               backgroundRepeat: "repeat",
             }}
@@ -495,7 +495,7 @@ export function ConnectWallet() {
                   ].join(", "),
                 }}
               >
-                BAZA
+                BRO
               </span>
             </div>
 
