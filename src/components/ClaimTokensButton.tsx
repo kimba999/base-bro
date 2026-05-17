@@ -12,23 +12,24 @@ import {
 } from "wagmi";
 
 import {
+  BRO_CHAIN_ID,
   BRO_TOKEN_ABI,
   BRO_TOKEN_ADDRESS,
 } from "@/config/contracts";
+import { toClaimAmountWhole } from "@/lib/claimTokens";
 
 type ClaimTokensButtonProps = {
-  /** Whole $BRO units to mint (matches `claimTokens(uint256 amount)`). */
-  amount: bigint;
+  /** Whole $BRO units from local unclaimed pool (not wei). */
+  unclaimedWhole: number;
   disabled: boolean;
   /** When true, prefer EIP-5792 `wallet_sendCalls` (atomic batch path). */
   supportsAtomicBatch: boolean;
-  /** Visual variant (glow when many unclaimed clicks). */
   highlight: boolean;
   onConfirmed: () => void;
 };
 
 export function ClaimTokensButton({
-  amount,
+  unclaimedWhole,
   disabled,
   supportsAtomicBatch,
   highlight,
@@ -39,12 +40,25 @@ export function ClaimTokensButton({
   const { address, status } = useConnection();
   const [phase, setPhase] = useState<"idle" | "batch" | "legacy">("idle");
 
+  const amount = toClaimAmountWhole(unclaimedWhole);
+
   const { sendCallsAsync, isPending: isSendCallsPending } = useSendCalls();
   const { writeContractAsync, isPending: isWritePending } = useWriteContract();
 
   const invalidateReads = useCallback(async () => {
     await queryClient.invalidateQueries();
   }, [queryClient]);
+
+  const executeLegacyClaim = useCallback(async () => {
+    const hash = await writeContractAsync({
+      address: BRO_TOKEN_ADDRESS,
+      abi: BRO_TOKEN_ABI,
+      functionName: "claimTokens",
+      args: [amount],
+      chainId: BRO_CHAIN_ID,
+    });
+    await waitForTransactionReceipt(config, { hash });
+  }, [amount, config, writeContractAsync]);
 
   const handleClick = useCallback(async () => {
     if (disabled || amount <= BigInt(0) || status !== "connected" || !address) {
@@ -54,26 +68,26 @@ export function ClaimTokensButton({
     try {
       if (supportsAtomicBatch) {
         setPhase("batch");
-        const { id } = await sendCallsAsync({
-          calls: [
-            {
-              abi: BRO_TOKEN_ABI,
-              to: BRO_TOKEN_ADDRESS,
-              functionName: "claimTokens",
-              args: [amount],
-            },
-          ],
-        });
-        await waitForCallsStatus(config, { id });
+        try {
+          const { id } = await sendCallsAsync({
+            chainId: BRO_CHAIN_ID,
+            calls: [
+              {
+                abi: BRO_TOKEN_ABI,
+                to: BRO_TOKEN_ADDRESS,
+                functionName: "claimTokens",
+                args: [amount],
+              },
+            ],
+          });
+          await waitForCallsStatus(config, { id });
+        } catch {
+          setPhase("legacy");
+          await executeLegacyClaim();
+        }
       } else {
         setPhase("legacy");
-        const hash = await writeContractAsync({
-          address: BRO_TOKEN_ADDRESS,
-          abi: BRO_TOKEN_ABI,
-          functionName: "claimTokens",
-          args: [amount],
-        });
-        await waitForTransactionReceipt(config, { hash });
+        await executeLegacyClaim();
       }
 
       await invalidateReads();
@@ -86,12 +100,12 @@ export function ClaimTokensButton({
     amount,
     config,
     disabled,
+    executeLegacyClaim,
     invalidateReads,
     onConfirmed,
     sendCallsAsync,
     status,
     supportsAtomicBatch,
-    writeContractAsync,
   ]);
 
   const isPending =
@@ -101,7 +115,7 @@ export function ClaimTokensButton({
     <button
       type="button"
       onClick={() => void handleClick()}
-      disabled={disabled || isPending}
+      disabled={disabled || isPending || amount <= BigInt(0)}
       className={`font-orbitron w-full rounded-xl border-2 px-4 py-3 text-sm font-semibold text-neon-orange transition ${
         highlight
           ? "border-neon-magenta bg-background shadow-[0_0_30px_rgba(255,0,255,0.45)] hover:shadow-[0_0_40px_rgba(255,0,255,0.6)]"

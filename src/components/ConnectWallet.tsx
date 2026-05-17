@@ -646,11 +646,14 @@ export function ConnectWallet() {
         )}
 
         <ClaimTokensButton
-          amount={BigInt(unclaimedBz)}
+          unclaimedWhole={unclaimedBz}
           disabled={!canClaim}
           supportsAtomicBatch={supportsAtomicBatch}
           highlight={unclaimedBz >= requiredTapsForClaim}
-          onConfirmed={() => resetClicks()}
+          onConfirmed={() => {
+            resetClicks();
+            void refetchBalance();
+          }}
         />
       </motion.div>
 
