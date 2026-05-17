@@ -67,7 +67,7 @@ export const metadata: Metadata = {
     images: [LOGO_PNG],
   },
   other: {
-    "base:app_id": "69861ce98dcaa0daf5755fcc",
+    "base:app_id": "6a09fddf03f4aa23342c5e6f",
     "talentapp:project_verification": "050ae6ae47c19734702b4db87c31051af3c4566685cc57f4ad72674477e369f74c4573e9e9e235e01654899a505aeb764575c4d26abff6ec8c1b39cf9f3ba0b3",
   },
 };
