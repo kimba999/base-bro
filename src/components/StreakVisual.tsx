@@ -26,11 +26,11 @@ export function StreakVisual({ currentStreak }: StreakVisualProps) {
   const streakZero = currentStreak <= BigInt(0);
 
   return (
-    <div className="mb-5 sm:mb-6">
-      <p className="mb-2 text-center text-xs font-medium uppercase tracking-wide text-slate-400">
+    <motion.div className="mb-5 sm:mb-6">
+      <p className="mb-2 text-center text-xs font-medium uppercase tracking-wide text-neon-cyan/70">
         7-day $BRO streak
       </p>
-      <div className="flex justify-between gap-1 sm:gap-2">
+      <motion.div className="flex justify-between gap-1 sm:gap-2">
         {days.map((day) => {
           const state = cellState(day, currentStreak);
           const isSeventh = day === 7;
@@ -46,25 +46,25 @@ export function StreakVisual({ currentStreak }: StreakVisualProps) {
 
           if (isUpcoming) {
             className +=
-              " border-slate-600/50 bg-slate-800/40 text-slate-500 opacity-50";
+              " border-neon-magenta/30 bg-background/60 text-neon-cyan/40 opacity-50";
           } else if (isCompleted) {
             if (isSeventh) {
               className +=
-                " border-amber-400 bg-blue-600 text-white shadow-[0_0_12px_rgba(251,191,36,0.35)]";
+                " border-neon-orange bg-neon-magenta/20 text-neon-orange shadow-[0_0_12px_rgba(255,69,0,0.45)]";
             } else {
               className +=
-                " border-blue-500 bg-blue-600 text-white shadow-sm shadow-blue-500/30";
+                " border-neon-magenta bg-neon-magenta/15 text-neon-cyan shadow-[0_0_10px_rgba(255,0,255,0.35)]";
             }
           } else if (isCurrent) {
             if (isSeventh) {
               className +=
-                " border-amber-400 bg-slate-900/90 text-amber-100 shadow-[0_0_16px_rgba(251,191,36,0.45)] animate-[streak-ring_1.6s_ease-in-out_infinite]";
+                " border-neon-orange bg-background text-neon-orange shadow-[0_0_16px_rgba(255,69,0,0.5)] animate-[streak-ring_1.6s_ease-in-out_infinite]";
             } else if (inviteFirstDay) {
               className +=
-                " border-blue-400 bg-slate-900/90 text-blue-100 shadow-[0_0_22px_rgba(59,130,246,0.55)] ring-2 ring-blue-400/50 ring-offset-2 ring-offset-slate-900 animate-[streak-ring_1.3s_ease-in-out_infinite]";
+                " border-neon-magenta bg-background text-neon-cyan shadow-[0_0_22px_rgba(255,0,255,0.55)] ring-2 ring-neon-magenta/50 ring-offset-2 ring-offset-background animate-[streak-ring_1.3s_ease-in-out_infinite]";
             } else {
               className +=
-                " border-blue-500 bg-slate-900/90 text-blue-100 animate-[streak-ring_1.4s_ease-in-out_infinite]";
+                " border-neon-magenta bg-background text-neon-cyan animate-[streak-ring_1.4s_ease-in-out_infinite]";
             }
           }
 
@@ -85,7 +85,7 @@ export function StreakVisual({ currentStreak }: StreakVisualProps) {
                 {isCompleted && !isSeventh ? (
                   <motion.svg
                     key={`check-${day}-${currentStreak.toString()}`}
-                    className="h-5 w-5 text-white"
+                    className="h-5 w-5 text-neon-cyan"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -106,16 +106,16 @@ export function StreakVisual({ currentStreak }: StreakVisualProps) {
                   </motion.svg>
                 ) : null}
                 {isCurrent && !isSeventh ? (
-                  <span className="text-xs text-blue-200">{day}</span>
+                  <span className="text-xs text-neon-orange">{day}</span>
                 ) : null}
                 {isUpcoming ? (
-                  <span className="text-xs text-slate-500">{day}</span>
+                  <span className="text-xs text-neon-cyan/40">{day}</span>
                 ) : null}
               </div>
             </div>
           );
         })}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

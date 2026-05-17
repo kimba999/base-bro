@@ -102,16 +102,16 @@ export function ClaimTokensButton({
       type="button"
       onClick={() => void handleClick()}
       disabled={disabled || isPending}
-      className={`w-full rounded-xl px-4 py-3 text-sm font-semibold text-white transition ${
+      className={`w-full rounded-xl border-2 px-4 py-3 text-sm font-semibold text-neon-orange transition ${
         highlight
-          ? "bg-blue-500 shadow-[0_0_30px_rgba(56,189,248,0.6)] hover:bg-blue-400"
-          : "bg-slate-700"
-      } disabled:cursor-not-allowed disabled:opacity-70`}
+          ? "border-neon-magenta bg-background shadow-[0_0_30px_rgba(255,0,255,0.45)] hover:shadow-[0_0_40px_rgba(255,0,255,0.6)]"
+          : "border-neon-magenta/50 bg-background/80 hover:border-neon-magenta"
+      } disabled:cursor-not-allowed disabled:opacity-50`}
     >
       {isPending ? (
         <span className="inline-flex items-center gap-2">
           <motion.span
-            className="h-4 w-4 rounded-full border-2 border-white/50 border-t-white"
+            className="h-4 w-4 rounded-full border-2 border-neon-magenta/50 border-t-neon-orange"
             animate={{ rotate: 360 }}
             transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
           />
