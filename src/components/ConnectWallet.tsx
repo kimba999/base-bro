@@ -11,7 +11,7 @@ import {
 import { useClicker } from "@/hooks/useClicker";
 import { useWalletCapabilities } from "@/hooks/useWalletCapabilities";
 import { formatBzCompact, formatBzExact } from "@/lib/bzFormat";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   type MouseEvent,
   type PointerEvent,
@@ -169,6 +169,7 @@ export function ConnectWallet() {
   );
   const [coinHover, setCoinHover] = useState(false);
   const [coinPressedLocal, setCoinPressedLocal] = useState(false);
+  const [isWheelOpen, setIsWheelOpen] = useState(false);
 
   const isCorrectNetwork = chainId === BRO_CHAIN.id;
 
@@ -595,18 +596,6 @@ export function ConnectWallet() {
           </motion.button>
         </div>
 
-        <CyberWheel
-          unclaimedBro={unclaimedBz}
-          walletBroWhole={walletBroWhole}
-          disabled={!isCorrectNetwork}
-          onAddUnclaimed={addUnclaimed}
-          onRefillEnergy={refillEnergy}
-          onActivateTapMultiplier={activateTapMultiplier}
-          onActivateStreakShield={activateStreakShield}
-          onTriggerGlitch={triggerScreenGlitch}
-          onSpendUnclaimed={spendUnclaimed}
-        />
-
         <motion.div className="mb-4">
           <motion.div className="mb-2 flex justify-between text-xs text-neon-cyan/60">
             <span>Energy</span>
@@ -624,16 +613,26 @@ export function ConnectWallet() {
           <p className="mt-2 text-xs text-neon-cyan/50">+2 energy per second</p>
         </motion.div>
 
-        <button
-          type="button"
-          onClick={handleDailyCheckIn}
-          disabled={
-            isCheckInPending || !isCorrectNetwork || !canDailyCheckIn
-          }
-          className="font-orbitron mb-2 w-full rounded-xl border-2 border-neon-magenta bg-background px-4 py-3 text-sm font-semibold text-neon-cyan transition hover:bg-neon-magenta/10 hover:shadow-[0_0_24px_rgba(255,0,255,0.35)] disabled:cursor-not-allowed disabled:border-neon-magenta/20 disabled:bg-background/40 disabled:text-neon-cyan/40"
-        >
-          {isCheckInPending ? "Transaction Pending..." : "Daily Check-in"}
-        </button>
+        <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:gap-4">
+          <button
+            type="button"
+            onClick={handleDailyCheckIn}
+            disabled={
+              isCheckInPending || !isCorrectNetwork || !canDailyCheckIn
+            }
+            className="font-orbitron flex-1 rounded-xl border-2 border-neon-magenta bg-background px-4 py-3 text-sm font-semibold text-neon-cyan transition hover:bg-neon-magenta/10 hover:shadow-[0_0_24px_rgba(255,0,255,0.35)] disabled:cursor-not-allowed disabled:border-neon-magenta/20 disabled:bg-background/40 disabled:text-neon-cyan/40"
+          >
+            {isCheckInPending ? "Transaction Pending..." : "Daily Check-in"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsWheelOpen(true)}
+            disabled={!isCorrectNetwork}
+            className="font-orbitron flex-1 rounded-xl border-2 border-neon-orange bg-background px-4 py-3 text-sm font-bold tracking-wide text-neon-orange transition hover:bg-neon-orange/10 hover:shadow-[0_0_24px_rgba(255,69,0,0.4)] disabled:cursor-not-allowed disabled:border-neon-magenta/20 disabled:bg-background/40 disabled:text-neon-cyan/40"
+          >
+            [ HACK RADAR ]
+          </button>
+        </div>
 
         {!canDailyCheckIn && isCorrectNetwork && lastCheckInSec > BigInt(0) ? (
           <p className="mb-3 text-center text-xs text-neon-cyan/60">
@@ -654,6 +653,51 @@ export function ConnectWallet() {
           onConfirmed={() => resetClicks()}
         />
       </motion.div>
+
+      <AnimatePresence>
+        {isWheelOpen ? (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Node Fortune Radar"
+            onClick={() => setIsWheelOpen(false)}
+          >
+            <motion.div
+              className="relative w-full max-w-md"
+              initial={{ scale: 0.92, opacity: 0, y: 16 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.94, opacity: 0, y: 12 }}
+              transition={{ type: "spring", stiffness: 380, damping: 28 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setIsWheelOpen(false)}
+                className="font-orbitron absolute -right-1 -top-1 z-10 flex h-9 w-9 items-center justify-center rounded-lg border-2 border-neon-magenta bg-background text-sm font-bold text-neon-cyan shadow-[0_0_16px_rgba(255,0,255,0.45)] transition hover:border-neon-cyan hover:text-neon-orange"
+                aria-label="Close hack radar"
+              >
+                X
+              </button>
+              <CyberWheel
+                className="mb-0"
+                unclaimedBro={unclaimedBz}
+                walletBroWhole={walletBroWhole}
+                disabled={!isCorrectNetwork}
+                onAddUnclaimed={addUnclaimed}
+                onRefillEnergy={refillEnergy}
+                onActivateTapMultiplier={activateTapMultiplier}
+                onActivateStreakShield={activateStreakShield}
+                onTriggerGlitch={triggerScreenGlitch}
+                onSpendUnclaimed={spendUnclaimed}
+              />
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </main>
   );
 }

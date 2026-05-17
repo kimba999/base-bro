@@ -141,6 +141,7 @@ type CyberWheelProps = {
   unclaimedBro: number;
   walletBroWhole: number;
   disabled?: boolean;
+  className?: string;
   onAddUnclaimed: (amount: number) => void;
   onRefillEnergy: () => void;
   onActivateTapMultiplier: () => void;
@@ -159,6 +160,7 @@ export function CyberWheel({
   unclaimedBro,
   walletBroWhole,
   disabled = false,
+  className = "",
   onAddUnclaimed,
   onRefillEnergy,
   onActivateTapMultiplier,
@@ -286,7 +288,9 @@ export function CyberWheel({
   }).join(", ");
 
   return (
-    <section className="font-orbitron mb-6 rounded-2xl border border-neon-magenta/40 bg-background/90 p-4 shadow-[0_0_32px_rgba(255,0,255,0.15)] sm:p-5">
+    <section
+      className={`font-orbitron mb-6 rounded-2xl border border-neon-magenta/40 bg-background/90 p-4 shadow-[0_0_32px_rgba(255,0,255,0.15)] sm:p-5 ${className}`}
+    >
       <motion.div className="mb-3 flex items-center justify-between gap-2">
         <div>
           <p className="text-[10px] uppercase tracking-[0.35em] text-neon-cyan/60">
@@ -383,7 +387,7 @@ export function CyberWheel({
       <AnimatePresence>
         {modal ? (
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
