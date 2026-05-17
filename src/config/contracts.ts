@@ -9,4 +9,4 @@ export const BRO_CHAIN_ID = BRO_CHAIN.id;
 
 /** BaseBroToken on Base Mainnet (Remix deploy). */
 export const BRO_TOKEN_ADDRESS =
-  "0xE258530CdCB5742025588049aCb4C7CDFBAc794c" as const;
+  "0x59a4B057191Fc9F6a2df36509a3d0980eA01201a" as const;

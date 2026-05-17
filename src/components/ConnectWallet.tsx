@@ -630,7 +630,7 @@ export function ConnectWallet() {
             disabled={!isCorrectNetwork}
             className="font-orbitron flex-1 rounded-xl border-2 border-neon-orange bg-background px-4 py-3 text-sm font-bold tracking-wide text-neon-orange transition hover:bg-neon-orange/10 hover:shadow-[0_0_24px_rgba(255,69,0,0.4)] disabled:cursor-not-allowed disabled:border-neon-magenta/20 disabled:bg-background/40 disabled:text-neon-cyan/40"
           >
-            [ FREE CYBER SPIN ]
+            [ CYBER SPIN 3/DAY ]
           </button>
         </div>
 
@@ -684,15 +684,12 @@ export function ConnectWallet() {
               </button>
               <CyberWheel
                 className="mb-0"
-                unclaimedBro={unclaimedBz}
-                walletBroWhole={walletBroWhole}
                 disabled={!isCorrectNetwork}
-                onAddUnclaimed={addUnclaimed}
                 onRefillEnergy={refillEnergy}
                 onActivateTapMultiplier={activateTapMultiplier}
                 onActivateStreakShield={activateStreakShield}
                 onTriggerGlitch={triggerScreenGlitch}
-                onSpendUnclaimed={spendUnclaimed}
+                onSpinComplete={() => void refetchBalance()}
               />
             </motion.div>
           </motion.div>

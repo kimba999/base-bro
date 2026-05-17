@@ -1,13 +1,29 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { waitForTransactionReceipt } from "wagmi/actions";
+import {
+  useConfig,
+  useConnection,
+  useReadContract,
+  useWriteContract,
+} from "wagmi";
+
+import {
+  BRO_CHAIN_ID,
+  BRO_TOKEN_ABI,
+  BRO_TOKEN_ADDRESS,
+} from "@/config/contracts";
+import {
+  outcomeTypeToSectorId,
+  parseWheelSpinLogs,
+  type WheelOutcomeType,
+} from "@/lib/wheelSpin";
 
 const SECTOR_COUNT = 8;
 const SECTOR_ANGLE = 360 / SECTOR_COUNT;
-const SPIN_COST_BRO = 5;
-const WHEEL_DAY_KEY = "base-bro-wheel-day";
-const WHEEL_SPINS_KEY = "base-bro-wheel-spins";
 
 type PrizeKind =
   | "bro5"
@@ -25,8 +41,6 @@ type Sector = {
   shortLabel: string;
   kind: PrizeKind;
   color: string;
-  weight: number;
-  broReward?: number;
   epic?: boolean;
 };
 
@@ -37,8 +51,6 @@ const SECTORS: Sector[] = [
     shortLabel: "+5",
     kind: "bro5",
     color: "#00ffff",
-    weight: 28,
-    broReward: 5,
   },
   {
     id: 1,
@@ -46,8 +58,6 @@ const SECTORS: Sector[] = [
     shortLabel: "+20",
     kind: "bro20",
     color: "#00e5ff",
-    weight: 18,
-    broReward: 20,
   },
   {
     id: 2,
@@ -55,8 +65,6 @@ const SECTORS: Sector[] = [
     shortLabel: "+100",
     kind: "bro100",
     color: "#7df9ff",
-    weight: 8,
-    broReward: 100,
   },
   {
     id: 3,
@@ -64,8 +72,6 @@ const SECTORS: Sector[] = [
     shortLabel: "500",
     kind: "jackpot",
     color: "#ff4500",
-    weight: 1,
-    broReward: 500,
     epic: true,
   },
   {
@@ -74,7 +80,6 @@ const SECTORS: Sector[] = [
     shortLabel: "NRG",
     kind: "energy",
     color: "#ff00ff",
-    weight: 15,
   },
   {
     id: 5,
@@ -82,7 +87,6 @@ const SECTORS: Sector[] = [
     shortLabel: "SHLD",
     kind: "shield",
     color: "#c77dff",
-    weight: 12,
   },
   {
     id: 6,
@@ -90,7 +94,6 @@ const SECTORS: Sector[] = [
     shortLabel: "x2",
     kind: "multiplier",
     color: "#ff6ec7",
-    weight: 13,
   },
   {
     id: 7,
@@ -98,36 +101,8 @@ const SECTORS: Sector[] = [
     shortLabel: "ERR",
     kind: "glitch",
     color: "#ff0040",
-    weight: 5,
   },
 ];
-
-function todayKey() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function readSpinsToday(): number {
-  if (typeof window === "undefined") return 0;
-  const day = window.localStorage.getItem(WHEEL_DAY_KEY);
-  if (day !== todayKey()) return 0;
-  const n = Number(window.localStorage.getItem(WHEEL_SPINS_KEY) ?? "0");
-  return Number.isFinite(n) ? n : 0;
-}
-
-function writeSpinsToday(count: number) {
-  window.localStorage.setItem(WHEEL_DAY_KEY, todayKey());
-  window.localStorage.setItem(WHEEL_SPINS_KEY, String(count));
-}
-
-function pickWeightedSector(): Sector {
-  const total = SECTORS.reduce((s, x) => s + x.weight, 0);
-  let roll = Math.random() * total;
-  for (const sector of SECTORS) {
-    roll -= sector.weight;
-    if (roll <= 0) return sector;
-  }
-  return SECTORS[0];
-}
 
 function rotationForSectorIndex(index: number, currentRotation: number) {
   const extraSpins = 5 + Math.floor(Math.random() * 3);
@@ -137,17 +112,18 @@ function rotationForSectorIndex(index: number, currentRotation: number) {
   return currentRotation + target - base + (Math.random() * 8 - 4);
 }
 
+function broLabelFromWei(wei: bigint): string {
+  return (wei / BigInt(10) ** BigInt(18)).toString();
+}
+
 type CyberWheelProps = {
-  unclaimedBro: number;
-  walletBroWhole: number;
   disabled?: boolean;
   className?: string;
-  onAddUnclaimed: (amount: number) => void;
   onRefillEnergy: () => void;
   onActivateTapMultiplier: () => void;
   onActivateStreakShield: () => void;
   onTriggerGlitch: () => void;
-  onSpendUnclaimed: (amount: number) => boolean;
+  onSpinComplete?: () => void;
 };
 
 type ModalState = {
@@ -157,79 +133,103 @@ type ModalState = {
 };
 
 export function CyberWheel({
-  unclaimedBro,
-  walletBroWhole,
   disabled = false,
   className = "",
-  onAddUnclaimed,
   onRefillEnergy,
   onActivateTapMultiplier,
   onActivateStreakShield,
   onTriggerGlitch,
-  onSpendUnclaimed,
+  onSpinComplete,
 }: CyberWheelProps) {
+  const config = useConfig();
+  const queryClient = useQueryClient();
+  const { address, status } = useConnection();
+  const { writeContractAsync, isPending: isWritePending } = useWriteContract();
+
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
-  const [spinsToday, setSpinsToday] = useState(0);
+  const [waitingChain, setWaitingChain] = useState(false);
   const [modal, setModal] = useState<ModalState | null>(null);
+  const [spinError, setSpinError] = useState<string | null>(null);
   const rotationRef = useRef(0);
 
-  useEffect(() => {
-    setSpinsToday(readSpinsToday());
-  }, []);
+  const readsEnabled =
+    Boolean(address) && status === "connected" && !disabled;
 
-  const isFreeSpin = spinsToday === 0;
-  const canAffordPaid =
-    unclaimedBro >= SPIN_COST_BRO || walletBroWhole >= SPIN_COST_BRO;
-  const canHack = !disabled && !spinning && (isFreeSpin || canAffordPaid);
+  const { data: maxSpinsData } = useReadContract({
+    address: BRO_TOKEN_ADDRESS,
+    abi: BRO_TOKEN_ABI,
+    functionName: "MAX_DAILY_SPINS",
+    query: { enabled: readsEnabled },
+  });
 
-  const costLabel = isFreeSpin
-    ? "FREE NODE ACCESS — 1× / day"
-    : `COST: ${SPIN_COST_BRO} $BRO (unclaimed or wallet)`;
+  const { data: spinsUsedData, refetch: refetchSpins } = useReadContract({
+    address: BRO_TOKEN_ADDRESS,
+    abi: BRO_TOKEN_ABI,
+    functionName: "effectiveDailySpinCount",
+    args: address ? [address] : undefined,
+    query: {
+      enabled: readsEnabled,
+      refetchInterval: 8000,
+    },
+  });
 
-  const applyPrize = useCallback(
-    (sector: Sector) => {
-      switch (sector.kind) {
-        case "bro5":
-        case "bro20":
-        case "bro100":
-        case "jackpot":
-          if (sector.broReward) onAddUnclaimed(sector.broReward);
+  const maxSpins =
+    typeof maxSpinsData === "bigint" ? Number(maxSpinsData) : 3;
+  const spinsUsed =
+    typeof spinsUsedData === "bigint" ? Number(spinsUsedData) : 0;
+  const spinsLeft = Math.max(0, maxSpins - spinsUsed);
+
+  const isWaitingBlockchain = waitingChain || isWritePending;
+  const canHack =
+    !disabled &&
+    !spinning &&
+    !isWaitingBlockchain &&
+    status === "connected" &&
+    Boolean(address) &&
+    spinsLeft > 0;
+
+  const applyOutcome = useCallback(
+    (outcomeType: WheelOutcomeType, broAmountWei: bigint) => {
+      const sector = SECTORS[outcomeTypeToSectorId(outcomeType)] ?? SECTORS[0];
+
+      switch (outcomeType) {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
           setModal({
             title: sector.epic ? "◆ JACKPOT BREACH ◆" : "NODE REWARD",
-            message:
-              sector.kind === "jackpot"
-                ? `+${sector.broReward} $BRO injected into unclaimed pool!`
-                : `+${sector.broReward} $BRO added to Unclaimed.`,
+            message: `+${broLabelFromWei(broAmountWei)} $BRO minted to your wallet on-chain.`,
             epic: sector.epic,
           });
           break;
-        case "energy":
+        case 4:
           onRefillEnergy();
           setModal({
             title: "POWER SURGE",
             message: "Energy restored to 500/500.",
           });
           break;
-        case "shield":
+        case 5:
           onActivateStreakShield();
           setModal({
             title: "STREAK SHIELD ONLINE",
             message: "Streak protection active for 5 minutes.",
           });
           break;
-        case "multiplier":
+        case 6:
           onActivateTapMultiplier();
           setModal({
             title: "TAP MULTIPLIER x2",
             message: "Mining taps grant +2 $BRO for 5 minutes.",
           });
           break;
-        case "glitch":
+        case 7:
           onTriggerGlitch();
           setModal({
             title: "SYSTEM ERROR",
-            message: "Node corrupted. No reward — screen glitch engaged.",
+            message: "Node corrupted. No on-chain $BRO — screen glitch engaged.",
           });
           break;
         default:
@@ -239,45 +239,75 @@ export function CyberWheel({
     [
       onActivateStreakShield,
       onActivateTapMultiplier,
-      onAddUnclaimed,
       onRefillEnergy,
       onTriggerGlitch,
     ],
   );
 
-  const payForSpin = useCallback(() => {
-    if (isFreeSpin) return true;
-    if (unclaimedBro >= SPIN_COST_BRO) {
-      return onSpendUnclaimed(SPIN_COST_BRO);
+  const runWheelAnimation = useCallback(
+    (outcomeType: WheelOutcomeType, broAmountWei: bigint) => {
+      const sectorIndex = outcomeTypeToSectorId(outcomeType);
+      const nextRotation = rotationForSectorIndex(
+        sectorIndex,
+        rotationRef.current,
+      );
+      rotationRef.current = nextRotation;
+      setRotation(nextRotation);
+      setSpinning(true);
+
+      window.setTimeout(() => {
+        setSpinning(false);
+        applyOutcome(outcomeType, broAmountWei);
+      }, 5200);
+    },
+    [applyOutcome],
+  );
+
+  const handleHack = useCallback(async () => {
+    if (!canHack || !address) return;
+
+    setSpinError(null);
+    setWaitingChain(true);
+
+    try {
+      const hash = await writeContractAsync({
+        address: BRO_TOKEN_ADDRESS,
+        abi: BRO_TOKEN_ABI,
+        functionName: "spinWheel",
+        chainId: BRO_CHAIN_ID,
+      });
+
+      const receipt = await waitForTransactionReceipt(config, { hash });
+      const parsed = parseWheelSpinLogs(receipt.logs, BRO_TOKEN_ADDRESS);
+
+      if (!parsed) {
+        setSpinError("Spin confirmed but prize event was not found in logs.");
+        return;
+      }
+
+      await queryClient.invalidateQueries();
+      await refetchSpins();
+      onSpinComplete?.();
+      runWheelAnimation(parsed.outcomeType, parsed.broAmountWei);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Transaction failed or rejected.";
+      setSpinError(message);
+    } finally {
+      setWaitingChain(false);
     }
-    if (walletBroWhole >= SPIN_COST_BRO) {
-      return true;
-    }
-    return false;
-  }, [isFreeSpin, onSpendUnclaimed, unclaimedBro, walletBroWhole]);
+  }, [
+    address,
+    canHack,
+    config,
+    onSpinComplete,
+    queryClient,
+    refetchSpins,
+    runWheelAnimation,
+    writeContractAsync,
+  ]);
 
-  const handleHack = useCallback(() => {
-    if (!canHack) return;
-    if (!payForSpin()) return;
-
-    const winner = pickWeightedSector();
-    const nextRotation = rotationForSectorIndex(
-      winner.id,
-      rotationRef.current,
-    );
-    rotationRef.current = nextRotation;
-    setRotation(nextRotation);
-    setSpinning(true);
-
-    const nextSpins = (readSpinsToday() || spinsToday) + 1;
-    writeSpinsToday(nextSpins);
-    setSpinsToday(nextSpins);
-
-    window.setTimeout(() => {
-      setSpinning(false);
-      applyPrize(winner);
-    }, 5200);
-  }, [applyPrize, canHack, payForSpin, spinsToday]);
+  const costLabel = `ON-CHAIN — ${spinsUsed}/${maxSpins} spins today (resets 24h after last spin)`;
 
   const conicGradient = SECTORS.map((s, i) => {
     const start = i * SECTOR_ANGLE;
@@ -287,25 +317,36 @@ export function CyberWheel({
     return `${fill} ${start}deg ${end}deg`;
   }).join(", ");
 
+  let buttonLabel = "[ HACK THE NODE ]";
+  if (isWaitingBlockchain) {
+    buttonLabel = "[ WAITING FOR BLOCKCHAIN... ]";
+  } else if (spinning) {
+    buttonLabel = "BREACH IN PROGRESS…";
+  } else if (spinsLeft <= 0) {
+    buttonLabel = "DAILY LIMIT REACHED (3/3)";
+  } else if (!address || status !== "connected") {
+    buttonLabel = "CONNECT WALLET";
+  }
+
   return (
     <section
       className={`font-orbitron mb-6 rounded-2xl border border-neon-magenta/40 bg-background/90 p-4 shadow-[0_0_32px_rgba(255,0,255,0.15)] sm:p-5 ${className}`}
     >
       <motion.div className="mb-3 flex items-center justify-between gap-2">
-        <div>
+        <motion.div>
           <p className="text-[10px] uppercase tracking-[0.35em] text-neon-cyan/60">
             System Hack
           </p>
           <h2 className="text-lg font-bold text-neon-magenta sm:text-xl">
             NODE FORTUNE RADAR
           </h2>
-        </div>
+        </motion.div>
         <span className="rounded border border-neon-orange/50 px-2 py-1 text-[10px] text-neon-orange">
-          8 SECTORS
+          {spinsLeft}/{maxSpins} LEFT
         </span>
       </motion.div>
 
-      <div className="relative mx-auto flex max-w-xs flex-col items-center">
+      <motion.div className="relative mx-auto flex max-w-xs flex-col items-center">
         <motion.div
           className="pointer-events-none absolute -top-1 left-1/2 z-20 -translate-x-1/2"
           aria-hidden
@@ -366,15 +407,19 @@ export function CyberWheel({
 
         <p className="mt-4 text-center text-[11px] text-neon-cyan/70">{costLabel}</p>
 
+        {spinError ? (
+          <p className="mt-2 text-center text-[10px] text-red-400">{spinError}</p>
+        ) : null}
+
         <button
           type="button"
           disabled={!canHack}
-          onClick={handleHack}
+          onClick={() => void handleHack()}
           className="font-orbitron mt-3 w-full rounded-xl border-2 border-neon-orange bg-background px-4 py-3 text-sm font-bold tracking-wider text-neon-orange transition hover:bg-neon-orange/10 hover:shadow-[0_0_28px_rgba(255,69,0,0.45)] disabled:cursor-not-allowed disabled:border-neon-magenta/20 disabled:text-neon-cyan/30"
         >
-          {spinning ? "BREACH IN PROGRESS…" : "[ HACK THE NODE ]"}
+          {buttonLabel}
         </button>
-      </div>
+      </motion.div>
 
       <ul className="mt-4 grid grid-cols-2 gap-1 text-[10px] text-neon-cyan/55 sm:grid-cols-4">
         {SECTORS.map((s) => (
