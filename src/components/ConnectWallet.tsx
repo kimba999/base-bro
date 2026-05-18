@@ -103,8 +103,11 @@ function formatCountdownSeconds(totalSeconds: bigint): string {
   return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
+const WALLET_USER_DISCONNECTED_KEY = "basebro_wallet_user_disconnected";
+
 function connectorLabel(connectorId: string, name: string) {
   const id = connectorId.toLowerCase();
+  if (id === "farcaster") return "Warpcast wallet";
   if (id.includes("base") || name.toLowerCase().includes("base"))
     return "Base Smart Wallet";
   if (id.includes("injected") || name.toLowerCase().includes("meta"))
@@ -113,8 +116,7 @@ function connectorLabel(connectorId: string, name: string) {
 }
 
 export function ConnectWallet() {
-  const { inMiniApp, user: farcasterUser, isLoading: isFarcasterLoading } =
-    useFarcasterMiniApp();
+  const { inMiniApp, user: farcasterUser } = useFarcasterMiniApp();
   const mounted = useSyncExternalStore(
     () => () => undefined,
     () => true,
@@ -132,32 +134,6 @@ export function ConnectWallet() {
     useWalletCapabilities();
   const chainId = useChainId();
   const { connect, connectors, isPending: isConnectPending } = useConnect();
-
-  useEffect(() => {
-    if (
-      !inMiniApp ||
-      isFarcasterLoading ||
-      isConnected ||
-      isConnecting ||
-      isConnectPending ||
-      isReconnecting
-    ) {
-      return;
-    }
-    const farcasterConnector = connectors.find((c) => c.id === "farcaster");
-    if (farcasterConnector) {
-      connect({ connector: farcasterConnector });
-    }
-  }, [
-    inMiniApp,
-    isFarcasterLoading,
-    isConnected,
-    isConnecting,
-    isConnectPending,
-    isReconnecting,
-    connectors,
-    connect,
-  ]);
   const { disconnect } = useDisconnect();
   const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
   const { writeContract, data: txHash, isPending: isWritePending } =
@@ -200,6 +176,34 @@ export function ConnectWallet() {
   const [coinHover, setCoinHover] = useState(false);
   const [coinPressedLocal, setCoinPressedLocal] = useState(false);
   const [isWheelOpen, setIsWheelOpen] = useState(false);
+
+  const handleConnect = useCallback(
+    (connector: (typeof connectors)[number]) => {
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem(WALLET_USER_DISCONNECTED_KEY);
+      }
+      connect({ connector });
+    },
+    [connect],
+  );
+
+  const handleDisconnect = useCallback(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(WALLET_USER_DISCONNECTED_KEY, "1");
+    }
+    disconnect();
+  }, [disconnect]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    if (typeof window === "undefined") return;
+    if (
+      sessionStorage.getItem(WALLET_USER_DISCONNECTED_KEY) === "1" &&
+      isConnected
+    ) {
+      disconnect();
+    }
+  }, [mounted, isConnected, disconnect]);
 
   const isCorrectNetwork = chainId === BRO_CHAIN.id;
 
@@ -422,24 +426,22 @@ export function ConnectWallet() {
             </p>
           ) : null}
           <p className="font-orbitron mb-1 text-center text-xs font-medium uppercase tracking-wide text-neon-cyan/50">
-            {inMiniApp
-              ? "Warpcast wallet"
-              : status === "connecting"
-                ? "Connecting"
-                : "Disconnected"}
+            {status === "connecting" || isConnectPending
+              ? "Connecting"
+              : "Choose wallet"}
           </p>
           <p className="mb-4 text-center text-sm text-neon-cyan/80">
-            {inMiniApp ? "Connecting your Farcaster wallet on Base…" : statusLine}
+            {inMiniApp
+              ? "In Warpcast use the built-in wallet. MetaMask and Base App work in a regular browser."
+              : statusLine}
           </p>
           <div className="flex flex-col gap-3">
-            {connectors
-              .filter((connector) => !inMiniApp || connector.id === "farcaster")
-              .map((connector) => (
+            {connectors.map((connector) => (
               <button
                 key={connector.uid}
                 type="button"
                 disabled={isConnectPending || isConnecting}
-                onClick={() => connect({ connector })}
+                onClick={() => handleConnect(connector)}
                 className="font-orbitron w-full rounded-xl border-2 border-neon-magenta bg-background px-4 py-3 text-sm font-medium text-neon-cyan transition hover:bg-neon-magenta/10 hover:shadow-[0_0_24px_rgba(255,0,255,0.35)] disabled:cursor-not-allowed disabled:border-neon-magenta/20 disabled:bg-background/40 disabled:text-neon-cyan/40"
               >
                 {isConnectPending || isConnecting
@@ -487,7 +489,7 @@ export function ConnectWallet() {
             ) : null}
             <button
               type="button"
-              onClick={() => disconnect()}
+              onClick={handleDisconnect}
               className="rounded-lg border border-neon-magenta/50 px-3 py-1.5 text-neon-cyan transition hover:border-neon-magenta hover:shadow-[0_0_12px_rgba(255,0,255,0.35)]"
             >
               Disconnect
