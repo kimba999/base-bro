@@ -43,8 +43,9 @@ const LOGO_PNG = `/logo.png?v=${LOGO_ASSET_VERSION}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: FARCASTER_APP_NAME,
-  description: BRO_TAGLINE,
+  title: "BaseBro",
+  description:
+    "Daily checkins onchain BRO claims and the cyber wheel on Base",
   icons: {
     icon: [{ url: LOGO_PNG, type: "image/png", sizes: "1024x703" }],
     apple: [{ url: LOGO_PNG, type: "image/png", sizes: "1024x703" }],
@@ -73,7 +74,8 @@ export const metadata: Metadata = {
     "fc:miniapp": fcMiniAppEmbed,
     "fc:frame": fcMiniAppEmbed,
     "base:app_id": "6a09fddf03f4aa23342c5e6f",
-    "talentapp:project_verification": "050ae6ae47c19734702b4db87c31051af3c4566685cc57f4ad72674477e369f74c4573e9e9e235e01654899a505aeb764575c4d26abff6ec8c1b39cf9f3ba0b3",
+    "talentapp:project_verification":
+      "cf408f8fbd0c396f3d3d98f008a86f29ec987cd19844bc88fb91694c6fc4ac3a4e06ead9b4911ffcdf5d2cdc8254a944e72b79778db8cd06a1a9391fc1e15dc4",
   },
 };
 
