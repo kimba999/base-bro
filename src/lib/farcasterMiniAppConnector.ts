@@ -2,22 +2,9 @@ import sdk from "@farcaster/frame-sdk";
 import { ChainNotConfiguredError, createConnector } from "wagmi";
 import { fromHex, getAddress, numberToHex, SwitchChainError } from "viem";
 
-const PROVIDER_REQUEST_TIMEOUT_MS = 4_000;
+import { withTimeout } from "@/lib/asyncTimeout";
 
-function withTimeout<T>(
-  promise: Promise<T>,
-  ms = PROVIDER_REQUEST_TIMEOUT_MS,
-): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) => {
-      setTimeout(
-        () => reject(new Error("Farcaster provider request timed out")),
-        ms,
-      );
-    }),
-  ]);
-}
+const PROVIDER_REQUEST_TIMEOUT_MS = 4_000;
 
 farcasterMiniApp.type = "farcasterMiniApp";
 
@@ -120,6 +107,8 @@ export function farcasterMiniApp() {
       const provider = await this.getProvider();
       const accounts = await withTimeout(
         provider.request({ method: "eth_accounts" }),
+        PROVIDER_REQUEST_TIMEOUT_MS,
+        "Farcaster provider request timed out",
       );
       return accounts.map((x) => getAddress(x));
     },
@@ -132,7 +121,11 @@ export function farcasterMiniApp() {
 
     async isAuthorized() {
       try {
-        const inside = await withTimeout(sdk.isInMiniApp(), 3_000);
+        const inside = await withTimeout(
+          sdk.isInMiniApp(),
+          3_000,
+          "Farcaster host detection timed out",
+        );
         if (!inside) return false;
         const accounts = await this.getAccounts();
         return accounts.length > 0;

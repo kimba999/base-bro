@@ -22,7 +22,7 @@ export function WalletAutoReconnect() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (sessionStorage.getItem(WALLET_USER_DISCONNECTED_KEY) === "1") return;
-    if (isLoading) return;
+    if (inMiniApp && isLoading) return;
     if (inMiniApp && !isSdkReady) return;
     if (didAutoReconnect.current) return;
     if (status !== "disconnected") return;

@@ -119,11 +119,7 @@ function connectorLabel(connectorId: string, name: string) {
 const RECONNECT_UI_TIMEOUT_MS = 8_000;
 
 export function ConnectWallet() {
-  const {
-    inMiniApp,
-    isLoading: isMiniAppEnvLoading,
-    user: farcasterUser,
-  } = useFarcasterMiniApp();
+  const { inMiniApp, user: farcasterUser } = useFarcasterMiniApp();
   const visibleConnectors = useVisibleConnectors();
   const mounted = useSyncExternalStore(
     () => () => undefined,
@@ -458,25 +454,15 @@ export function ConnectWallet() {
             </p>
           ) : null}
           <p className="font-orbitron mb-1 text-center text-xs font-medium uppercase tracking-wide text-neon-cyan/50">
-            {userInitiatedConnect
-              ? "Connecting"
-              : isMiniAppEnvLoading
-                ? "Loading"
-                : "Choose wallet"}
+            {userInitiatedConnect ? "Connecting" : "Choose wallet"}
           </p>
           <p className="mb-4 text-center text-sm text-neon-cyan/80">
-            {isMiniAppEnvLoading
-              ? "Detecting Warpcast / Base App environment…"
-              : inMiniApp
-                ? "Use the built-in Warpcast wallet below."
-                : statusLine}
+            {inMiniApp
+              ? "Warpcast wallet is recommended. Base Smart Wallet and MetaMask also work here."
+              : statusLine}
           </p>
           <motion.div className="flex flex-col gap-3">
-            {isMiniAppEnvLoading ? (
-              <p className="text-center text-sm text-neon-cyan/60">
-                Preparing wallet options…
-              </p>
-            ) : visibleConnectors.length === 0 ? (
+            {visibleConnectors.length === 0 ? (
               <p className="text-center text-sm text-neon-orange/90">
                 No wallet available in this app. Open Base Bro in Warpcast or a
                 mobile browser with Base / MetaMask.
