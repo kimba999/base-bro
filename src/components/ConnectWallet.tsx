@@ -11,6 +11,7 @@ import {
 } from "@/config/contracts";
 import { useFarcasterMiniApp } from "@/hooks/useFarcasterMiniApp";
 import { useClicker } from "@/hooks/useClicker";
+import { useVisibleConnectors } from "@/hooks/useVisibleConnectors";
 import { useWalletCapabilities } from "@/hooks/useWalletCapabilities";
 import { formatBzCompact, formatBzExact } from "@/lib/bzFormat";
 import { AnimatePresence, motion } from "framer-motion";
@@ -115,8 +116,15 @@ function connectorLabel(connectorId: string, name: string) {
   return name;
 }
 
+const RECONNECT_UI_TIMEOUT_MS = 8_000;
+
 export function ConnectWallet() {
-  const { inMiniApp, user: farcasterUser } = useFarcasterMiniApp();
+  const {
+    inMiniApp,
+    isLoading: isMiniAppEnvLoading,
+    user: farcasterUser,
+  } = useFarcasterMiniApp();
+  const visibleConnectors = useVisibleConnectors();
   const mounted = useSyncExternalStore(
     () => () => undefined,
     () => true,
@@ -128,12 +136,15 @@ export function ConnectWallet() {
     isConnecting,
     isReconnecting,
     isDisconnected,
-    status,
   } = useConnection();
   const { supportsBatching, supportsPaymasterService } =
     useWalletCapabilities();
   const chainId = useChainId();
-  const { connect, connectors, isPending: isConnectPending } = useConnect();
+  const { connect, isPending: isConnectPending } = useConnect();
+  const [pendingConnectorId, setPendingConnectorId] = useState<string | null>(
+    null,
+  );
+  const [reconnectUiTimedOut, setReconnectUiTimedOut] = useState(false);
   const { disconnect } = useDisconnect();
   const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
   const { writeContract, data: txHash, isPending: isWritePending } =
@@ -178,14 +189,32 @@ export function ConnectWallet() {
   const [isWheelOpen, setIsWheelOpen] = useState(false);
 
   const handleConnect = useCallback(
-    (connector: (typeof connectors)[number]) => {
+    (connector: (typeof visibleConnectors)[number]) => {
       if (typeof window !== "undefined") {
         sessionStorage.removeItem(WALLET_USER_DISCONNECTED_KEY);
       }
-      connect({ connector });
+      setPendingConnectorId(connector.id);
+      connect(
+        { connector },
+        {
+          onSettled: () => setPendingConnectorId(null),
+        },
+      );
     },
-    [connect],
+    [connect, visibleConnectors],
   );
+
+  useEffect(() => {
+    if (!isReconnecting) {
+      setReconnectUiTimedOut(false);
+      return;
+    }
+    const timer = window.setTimeout(
+      () => setReconnectUiTimedOut(true),
+      RECONNECT_UI_TIMEOUT_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [isReconnecting]);
 
   const handleDisconnect = useCallback(() => {
     if (typeof window !== "undefined") {
@@ -372,7 +401,9 @@ export function ConnectWallet() {
     );
   }
 
-  if (isReconnecting) {
+  const userInitiatedConnect = pendingConnectorId !== null;
+
+  if (isReconnecting && !reconnectUiTimedOut) {
     return (
       <motion.div className="flex min-h-screen items-center justify-center bg-background p-6">
         <motion.div className="w-full max-w-md rounded-3xl border border-neon-magenta/50 bg-background/90 p-8 text-center shadow-[0_0_40px_rgba(255,0,255,0.25)]">
@@ -400,9 +431,10 @@ export function ConnectWallet() {
   }
 
   if (!isConnected || !address) {
-    const statusLine =
-      isConnecting || isConnectPending
-        ? "Opening wallet…"
+    const statusLine = userInitiatedConnect
+      ? "Opening wallet…"
+      : isConnecting && !userInitiatedConnect
+        ? "Restoring previous session…"
         : isDisconnected
           ? "Choose how to connect"
           : "Connect wallet to start mining BRO";
@@ -426,30 +458,53 @@ export function ConnectWallet() {
             </p>
           ) : null}
           <p className="font-orbitron mb-1 text-center text-xs font-medium uppercase tracking-wide text-neon-cyan/50">
-            {status === "connecting" || isConnectPending
+            {userInitiatedConnect
               ? "Connecting"
-              : "Choose wallet"}
+              : isMiniAppEnvLoading
+                ? "Loading"
+                : "Choose wallet"}
           </p>
           <p className="mb-4 text-center text-sm text-neon-cyan/80">
-            {inMiniApp
-              ? "In Warpcast use the built-in wallet. MetaMask and Base App work in a regular browser."
-              : statusLine}
+            {isMiniAppEnvLoading
+              ? "Detecting Warpcast / Base App environment…"
+              : inMiniApp
+                ? "Use the built-in Warpcast wallet below."
+                : statusLine}
           </p>
-          <div className="flex flex-col gap-3">
-            {connectors.map((connector) => (
+          <motion.div className="flex flex-col gap-3">
+            {isMiniAppEnvLoading ? (
+              <p className="text-center text-sm text-neon-cyan/60">
+                Preparing wallet options…
+              </p>
+            ) : visibleConnectors.length === 0 ? (
+              <p className="text-center text-sm text-neon-orange/90">
+                No wallet available in this app. Open Base Bro in Warpcast or a
+                mobile browser with Base / MetaMask.
+              </p>
+            ) : (
+              visibleConnectors.map((connector) => {
+              const isThisPending =
+                pendingConnectorId === connector.id && isConnectPending;
+              const isOtherPending =
+                pendingConnectorId !== null &&
+                pendingConnectorId !== connector.id;
+
+              return (
               <button
                 key={connector.uid}
                 type="button"
-                disabled={isConnectPending || isConnecting}
+                disabled={isThisPending || isOtherPending}
                 onClick={() => handleConnect(connector)}
                 className="font-orbitron w-full rounded-xl border-2 border-neon-magenta bg-background px-4 py-3 text-sm font-medium text-neon-cyan transition hover:bg-neon-magenta/10 hover:shadow-[0_0_24px_rgba(255,0,255,0.35)] disabled:cursor-not-allowed disabled:border-neon-magenta/20 disabled:bg-background/40 disabled:text-neon-cyan/40"
               >
-                {isConnectPending || isConnecting
+                {isThisPending
                   ? "Connecting…"
                   : `Connect with ${connectorLabel(connector.id, connector.name)}`}
               </button>
-            ))}
-          </div>
+              );
+            })
+            )}
+          </motion.div>
         </motion.div>
       </div>
     );

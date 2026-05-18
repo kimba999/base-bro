@@ -5,10 +5,9 @@ import { type ReactNode, useState } from "react";
 import type { Config, State } from "wagmi";
 import { WagmiProvider } from "wagmi";
 
+import { WalletAutoReconnect } from "@/components/WalletAutoReconnect";
 import { FarcasterMiniAppProvider } from "@/context/FarcasterMiniAppContext";
 import { wagmiConfig } from "@/config/wagmi";
-
-const WALLET_USER_DISCONNECTED_KEY = "basebro_wallet_user_disconnected";
 
 type ProvidersProps = {
   children: ReactNode;
@@ -17,20 +16,19 @@ type ProvidersProps = {
 
 export function Providers({ children, initialState }: ProvidersProps) {
   const [queryClient] = useState(() => new QueryClient());
-  const [reconnectOnMount] = useState(() => {
-    if (typeof window === "undefined") return true;
-    return sessionStorage.getItem(WALLET_USER_DISCONNECTED_KEY) !== "1";
-  });
 
   return (
-    <WagmiProvider
-      config={wagmiConfig as Config}
-      initialState={initialState}
-      reconnectOnMount={reconnectOnMount}
-    >
-      <QueryClientProvider client={queryClient}>
-        <FarcasterMiniAppProvider>{children}</FarcasterMiniAppProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+    <FarcasterMiniAppProvider>
+      <WagmiProvider
+        config={wagmiConfig as Config}
+        initialState={initialState}
+        reconnectOnMount={false}
+      >
+        <QueryClientProvider client={queryClient}>
+          <WalletAutoReconnect />
+          {children}
+        </QueryClientProvider>
+      </WagmiProvider>
+    </FarcasterMiniAppProvider>
   );
 }
