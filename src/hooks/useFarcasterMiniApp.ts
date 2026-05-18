@@ -11,6 +11,8 @@ import {
 
 export type FarcasterUser = Context.MiniAppContext["user"];
 
+export type { FarcasterMiniAppContextValue } from "@/context/FarcasterMiniAppContext";
+
 const defaultValue: FarcasterMiniAppContextValue = {
   context: null,
   inMiniApp: false,
@@ -18,6 +20,9 @@ const defaultValue: FarcasterMiniAppContextValue = {
   isLoading: true,
   error: null,
   user: null,
+  isAppAdded: false,
+  hasNotifications: false,
+  refreshContext: async () => {},
 };
 
 /** Farcaster user + host context (FID, username, wallet is via wagmi after connect). */

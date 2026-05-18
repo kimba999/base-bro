@@ -5,6 +5,7 @@ import type { Context } from "@farcaster/frame-sdk";
 import {
   createContext,
   type ReactNode,
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -20,6 +21,9 @@ export type FarcasterMiniAppContextValue = {
   isLoading: boolean;
   error: Error | null;
   user: Context.MiniAppContext["user"] | null;
+  isAppAdded: boolean;
+  hasNotifications: boolean;
+  refreshContext: () => Promise<void>;
 };
 
 export const FarcasterMiniAppContext =
@@ -41,6 +45,15 @@ export function FarcasterMiniAppProvider({
   const [isSdkReady, setIsSdkReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+
+  const refreshContext = useCallback(async () => {
+    try {
+      const ctx = await sdk.context;
+      setContext(ctx);
+    } catch (e) {
+      setError(e instanceof Error ? e : new Error(String(e)));
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -80,8 +93,11 @@ export function FarcasterMiniAppProvider({
       isLoading,
       error,
       user: context?.user ?? null,
+      isAppAdded: context?.client?.added === true,
+      hasNotifications: Boolean(context?.client?.notificationDetails),
+      refreshContext,
     }),
-    [context, inMiniApp, isSdkReady, isLoading, error],
+    [context, inMiniApp, isSdkReady, isLoading, error, refreshContext],
   );
 
   return (

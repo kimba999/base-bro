@@ -22,6 +22,7 @@
     "ogTitle": "BaseBro",
     "ogDescription": "Mine and claim BRO on Base inside Warpcast",
     "castShareUrl": "https://base-bro.vercel.app/api/share",
+    "webhookUrl": "https://base-bro.vercel.app/api/webhook",
     "requiredChains": ["eip155:8453"],
     "canonicalDomain": "base-bro.vercel.app"
   },
@@ -43,6 +44,7 @@
     "ogTitle": "BaseBro",
     "ogDescription": "Mine and claim BRO on Base inside Warpcast",
     "castShareUrl": "https://base-bro.vercel.app/api/share",
+    "webhookUrl": "https://base-bro.vercel.app/api/webhook",
     "requiredChains": ["eip155:8453"],
     "canonicalDomain": "base-bro.vercel.app"
   }

@@ -2,6 +2,7 @@
 
 import { ClaimTokensButton } from "@/components/ClaimTokensButton";
 import { CyberWheel } from "@/components/CyberWheel";
+import { FarcasterAddAppButton } from "@/components/FarcasterAddAppButton";
 import { StreakVisual } from "@/components/StreakVisual";
 import {
   BRO_CHAIN,
@@ -493,6 +494,8 @@ export function ConnectWallet() {
             </button>
           </div>
         </div>
+
+        <FarcasterAddAppButton className="mb-4" />
 
         {!isCorrectNetwork ? (
           <button
