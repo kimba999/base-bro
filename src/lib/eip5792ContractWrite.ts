@@ -1,4 +1,4 @@
-import type { ResolvedRegister } from "wagmi";
+import type { Config } from "wagmi";
 import {
   waitForCallsStatus,
   waitForTransactionReceipt,
@@ -59,7 +59,7 @@ export async function executeContractWrite<
   writeContractAsync,
   call,
 }: {
-  config: ResolvedRegister["config"];
+  config: Config;
   supportsBatching: boolean;
   sendCallsAsync: SendCallsAsync;
   writeContractAsync: WriteContractAsync;

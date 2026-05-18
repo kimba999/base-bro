@@ -8,6 +8,7 @@ import {
   BRO_TOKEN_ABI,
   BRO_TOKEN_ADDRESS,
 } from "@/config/contracts";
+import { useFarcasterMiniApp } from "@/hooks/useFarcasterMiniApp";
 import { useClicker } from "@/hooks/useClicker";
 import { useWalletCapabilities } from "@/hooks/useWalletCapabilities";
 import { formatBzCompact, formatBzExact } from "@/lib/bzFormat";
@@ -111,6 +112,8 @@ function connectorLabel(connectorId: string, name: string) {
 }
 
 export function ConnectWallet() {
+  const { inMiniApp, user: farcasterUser, isLoading: isFarcasterLoading } =
+    useFarcasterMiniApp();
   const mounted = useSyncExternalStore(
     () => () => undefined,
     () => true,
@@ -128,6 +131,32 @@ export function ConnectWallet() {
     useWalletCapabilities();
   const chainId = useChainId();
   const { connect, connectors, isPending: isConnectPending } = useConnect();
+
+  useEffect(() => {
+    if (
+      !inMiniApp ||
+      isFarcasterLoading ||
+      isConnected ||
+      isConnecting ||
+      isConnectPending ||
+      isReconnecting
+    ) {
+      return;
+    }
+    const farcasterConnector = connectors.find((c) => c.id === "farcaster");
+    if (farcasterConnector) {
+      connect({ connector: farcasterConnector });
+    }
+  }, [
+    inMiniApp,
+    isFarcasterLoading,
+    isConnected,
+    isConnecting,
+    isConnectPending,
+    isReconnecting,
+    connectors,
+    connect,
+  ]);
   const { disconnect } = useDisconnect();
   const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
   const { writeContract, data: txHash, isPending: isWritePending } =
@@ -378,16 +407,33 @@ export function ConnectWallet() {
         <motion.div className="w-full max-w-md rounded-3xl border border-neon-magenta/50 bg-background/90 p-6 shadow-[0_0_40px_rgba(255,0,255,0.25)]">
           <h1
             className="font-orbitron glitch-text mb-5 text-center text-2xl font-bold tracking-wide sm:text-3xl"
-            data-text="Base Bro Mining"
+            data-text="Base Bro"
           >
-            Base Bro Mining
+            Base Bro
           </h1>
+          {inMiniApp && farcasterUser ? (
+            <p className="mb-3 text-center text-xs text-neon-cyan/70">
+              Farcaster:{" "}
+              <span className="font-orbitron text-neon-orange">
+                @{farcasterUser.username ?? `fid:${farcasterUser.fid}`}
+              </span>
+              <span className="text-neon-cyan/50"> · fid {farcasterUser.fid}</span>
+            </p>
+          ) : null}
           <p className="font-orbitron mb-1 text-center text-xs font-medium uppercase tracking-wide text-neon-cyan/50">
-            {status === "connecting" ? "Connecting" : "Disconnected"}
+            {inMiniApp
+              ? "Warpcast wallet"
+              : status === "connecting"
+                ? "Connecting"
+                : "Disconnected"}
           </p>
-          <p className="mb-4 text-center text-sm text-neon-cyan/80">{statusLine}</p>
+          <p className="mb-4 text-center text-sm text-neon-cyan/80">
+            {inMiniApp ? "Connecting your Farcaster wallet on Base…" : statusLine}
+          </p>
           <div className="flex flex-col gap-3">
-            {connectors.map((connector) => (
+            {connectors
+              .filter((connector) => !inMiniApp || connector.id === "farcaster")
+              .map((connector) => (
               <button
                 key={connector.uid}
                 type="button"
@@ -418,7 +464,15 @@ export function ConnectWallet() {
           Base Bro Mining
         </h1>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm text-neon-cyan/80">
-          <span>{shortenAddress(address)}</span>
+          <motion.div className="min-w-0">
+            <span>{shortenAddress(address)}</span>
+            {inMiniApp && farcasterUser ? (
+              <p className="mt-0.5 truncate text-xs text-neon-cyan/55">
+                @{farcasterUser.username ?? `fid:${farcasterUser.fid}`} · fid{" "}
+                {farcasterUser.fid}
+              </p>
+            ) : null}
+          </motion.div>
           <div className="flex flex-wrap items-center gap-2">
             {supportsBatching ? (
               <span className="rounded-full border border-neon-cyan/40 bg-background px-2 py-0.5 text-[11px] text-neon-cyan">

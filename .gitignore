@@ -8,3 +8,5 @@ node_modules/
 contract/cache/
 contract/out/
 contract/broadcast/
+cache_hardhat/
+artifacts_hardhat/

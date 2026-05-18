@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Orbitron } from "next/font/google";
 import { headers } from "next/headers";
 import { cookieToInitialState } from "wagmi";
 
+import { buildFcMiniAppEmbed, FARCASTER_APP_NAME } from "@/config/farcaster";
 import { getConfig } from "@/config/wagmi";
 
 import { ProvidersShell } from "./providers-loader";
@@ -32,7 +33,9 @@ const orbitron = Orbitron({
 
 /** Short line for meta + social cards (keep in sync with product copy). */
 const BRO_TAGLINE =
-  "Mine and claim $BRO on Base — streak check-ins, on-chain claims, Base Smart Wallet & MetaMask.";
+  "Mine and claim $BRO on Base — streak check-ins, on-chain claims, Warpcast & MetaMask.";
+
+const fcMiniAppEmbed = JSON.stringify(buildFcMiniAppEmbed(siteUrl));
 
 /** Bump when replacing `public/logo.png` to bust browser/CDN caches for favicon & OG. */
 const LOGO_ASSET_VERSION = "2";
@@ -40,7 +43,7 @@ const LOGO_PNG = `/logo.png?v=${LOGO_ASSET_VERSION}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Base Bro Mining",
+  title: FARCASTER_APP_NAME,
   description: BRO_TAGLINE,
   icons: {
     icon: [{ url: LOGO_PNG, type: "image/png", sizes: "1024x703" }],
@@ -48,25 +51,27 @@ export const metadata: Metadata = {
     shortcut: LOGO_PNG,
   },
   openGraph: {
-    title: "Base Bro Mining",
+    title: FARCASTER_APP_NAME,
     description: BRO_TAGLINE,
     images: [
       {
         url: LOGO_PNG,
         width: 1024,
         height: 703,
-        alt: "Base Bro Mining",
+        alt: FARCASTER_APP_NAME,
         type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Base Bro Mining",
+    title: FARCASTER_APP_NAME,
     description: BRO_TAGLINE,
     images: [LOGO_PNG],
   },
   other: {
+    "fc:miniapp": fcMiniAppEmbed,
+    "fc:frame": fcMiniAppEmbed,
     "base:app_id": "6a09fddf03f4aa23342c5e6f",
     "talentapp:project_verification": "050ae6ae47c19734702b4db87c31051af3c4566685cc57f4ad72674477e369f74c4573e9e9e235e01654899a505aeb764575c4d26abff6ec8c1b39cf9f3ba0b3",
   },

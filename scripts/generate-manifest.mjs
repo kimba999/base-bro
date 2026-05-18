@@ -28,8 +28,39 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 const MANIFEST_PATH = join(ROOT, "public/.well-known/farcaster.json");
 const ID_REGISTRY = "0x00000000Fc6c5F01Fc4011634a6f475c76e6e938";
-const DEFAULT_DOMAIN = "base-bro.vercel.app";
-const DEFAULT_ORIGIN = "https://base-bro.vercel.app";
+const APP_NAME = "Base Bro";
+
+function loadDotEnv(path) {
+  if (!existsSync(path)) return;
+  for (const line of readFileSync(path, "utf8").split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq === -1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    let value = trimmed.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    if (process.env[key] === undefined) process.env[key] = value;
+  }
+}
+
+loadDotEnv(join(ROOT, ".env.local"));
+
+function normalizeDomain(raw) {
+  return raw.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+}
+
+const DEFAULT_ORIGIN =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+  "https://base-bro.vercel.app";
+const DEFAULT_DOMAIN = normalizeDomain(
+  process.env.FARCASTER_DOMAIN || DEFAULT_ORIGIN,
+);
 
 const idRegistryAbi = [
   {
@@ -53,47 +84,41 @@ const isInteractive =
   process.argv.includes("-i") ||
   (process.stdin.isTTY && !process.env.FARCASTER_CUSTODY_PRIVATE_KEY);
 
-function loadDotEnv(path) {
-  if (!existsSync(path)) return;
-  for (const line of readFileSync(path, "utf8").split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    let value = trimmed.slice(eq + 1).trim();
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1);
-    }
-    if (process.env[key] === undefined) process.env[key] = value;
-  }
-}
-
 function normalizePrivateKey(raw) {
   const key = raw.trim();
   return key.startsWith("0x") ? key : `0x${key}`;
 }
 
-function normalizeDomain(raw) {
-  return raw.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+function assetUrl(origin, path) {
+  if (path.startsWith("http")) return path;
+  return `${origin.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
 }
 
-function buildFrameConfig({ name, origin, iconPath }) {
-  const iconUrl = iconPath.startsWith("http")
-    ? iconPath
-    : `${origin.replace(/\/$/, "")}/${iconPath.replace(/^\//, "")}`;
+/** Mini App manifest block (`frame` + `miniapp` must be identical). */
+function buildMiniAppConfig({ name, origin, iconPath }) {
+  const iconUrl = assetUrl(origin, iconPath);
+  const logoUrl = assetUrl(origin, "logo.png");
   return {
     version: "1",
     name,
     iconUrl,
     homeUrl: origin,
-    imageUrl: iconUrl,
-    buttonTitle: "Start Mining",
+    imageUrl: logoUrl,
+    ogImageUrl: logoUrl,
+    buttonTitle: "Mine $BRO",
     splashImageUrl: iconUrl,
     splashBackgroundColor: "#0052FF",
+    subtitle: "Mine $BRO on Base",
+    description:
+      "Daily check-ins, on-chain $BRO claims, and the cyber wheel — built for Base and Warpcast.",
+    primaryCategory: "games",
+    tags: ["base", "bro", "mining", "farcaster"],
+    tagline: "Streaks, spins, $BRO",
+    ogTitle: "Base Bro",
+    ogDescription: "Mine and claim $BRO on Base inside Warpcast.",
+    castShareUrl: `${origin}/api/share`,
+    requiredChains: ["eip155:8453"],
+    canonicalDomain: normalizeDomain(origin),
   };
 }
 
@@ -157,7 +182,7 @@ async function signAccountAssociation({ fid, custodyAddress, domain, privateKey 
 }
 
 async function promptInteractiveConfig() {
-  p.intro("Farcaster manifest — Base Bro Mining");
+  p.intro("Farcaster manifest — Base Bro");
 
   p.log.info(
     "@farcaster/mini-app-cli is not on npm yet. This wizard signs the manifest locally (JFS + custody key), same result as Warpcast.",
@@ -165,7 +190,7 @@ async function promptInteractiveConfig() {
 
   const name = await p.text({
     message: "App name",
-    initialValue: "Base Bro Mining",
+    initialValue: APP_NAME,
     validate: (v) => (v?.trim() ? undefined : "Required"),
   });
   if (p.isCancel(name)) process.exit(0);
@@ -204,7 +229,7 @@ async function promptInteractiveConfig() {
   });
   if (p.isCancel(fidInput)) process.exit(0);
 
-  const frame = buildFrameConfig({
+  const miniapp = buildMiniAppConfig({
     name: String(name).trim(),
     origin: String(origin).trim(),
     iconPath: String(iconPath).trim(),
@@ -223,26 +248,25 @@ async function promptInteractiveConfig() {
     domain: normalizeDomain(String(domain)),
     privateKey: String(privateKey).trim(),
     fidFromEnv: String(fidInput || "").trim() || undefined,
-    frame,
+    miniapp,
   };
 }
 
 async function main() {
-  loadDotEnv(join(ROOT, ".env.local"));
-
   let domain;
   let privateKey;
   let fidFromEnv;
-  let frame;
+  let miniapp;
 
   if (isInteractive) {
-    ({ domain, privateKey, fidFromEnv, frame } = await promptInteractiveConfig());
+    ({ domain, privateKey, fidFromEnv, miniapp } =
+      await promptInteractiveConfig());
   } else {
     privateKey = process.env.FARCASTER_CUSTODY_PRIVATE_KEY;
-    domain = normalizeDomain(process.env.FARCASTER_DOMAIN || DEFAULT_DOMAIN);
+    domain = DEFAULT_DOMAIN;
     fidFromEnv = process.env.FARCASTER_FID;
-    frame = buildFrameConfig({
-      name: "Base Bro Mining",
+    miniapp = buildMiniAppConfig({
+      name: APP_NAME,
       origin: DEFAULT_ORIGIN,
       iconPath: "logo.png",
     });
@@ -277,7 +301,7 @@ async function main() {
     privateKey,
   });
 
-  const manifest = { accountAssociation, frame };
+  const manifest = { accountAssociation, frame: miniapp, miniapp };
   writeFileSync(MANIFEST_PATH, `${JSON.stringify(manifest, null, 2)}\n`);
 
   spinner.stop("Manifest written and signature verified locally.");

@@ -1,27 +1,49 @@
 {
   "accountAssociation": {
-    "header": "eyJmaWQiOjczODkxMywidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweEM5ZUQ0NTE3YzE0RTA1NWZjRjI3NDI2NTk4NTVkMDI2RTY0MzViOTAifQ",
-    "payload": "eyJkb21haW4iOiJiYXphLW1pbmluZy1hcHAudmVyY2VsLmFwcCJ9",
-    "signature": "06NaJwYz18XeIKNEE/5d7yg5uCRuJeAAQss/1NpLWIw+FRHfyqGlnY6I2oT8JL4BOCoH1WDPbTsiBZ13Ju4XdRs="
+    "header": "eyJmaWQiOjc2MTQxOCwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweGYzNzBBQTJFYzEzNDREMUYwYjc1QTAwODgyYkY3RENDNTg5MTY2OTkifQ",
+    "payload": "eyJkb21haW4iOiJiYXNlLWJyby52ZXJjZWwuYXBwIn0",
+    "signature": "q91UDLAeXFUmR03hgUQ6s/sQ+yZpx7GoRewCWKZ3CeVlMNRhlFgIc5GabvyjtZ3syBNBzBNmk+QqegHEb7sajBw="
   },
   "frame": {
     "version": "1",
-    "name": "Base Bro Mining",
+    "name": "BaseBro",
     "iconUrl": "https://base-bro.vercel.app/logo.png",
     "homeUrl": "https://base-bro.vercel.app",
     "imageUrl": "https://base-bro.vercel.app/logo.png",
-    "buttonTitle": "Start Mining",
+    "ogImageUrl": "https://base-bro.vercel.app/logo.png",
+    "buttonTitle": "Mine $BRO",
     "splashImageUrl": "https://base-bro.vercel.app/logo.png",
     "splashBackgroundColor": "#0052FF",
-    "webhookUrl": "https://base-bro.vercel.app/api/webhook",
-    "subtitle": "Build your streak, mine $BRO.",
-    "description": "The premier onchain mining experience on Base. Engage daily, build your streak, and earn $BRO rewards.",
+    "subtitle": "Mine $BRO on Base",
+    "description": "Daily check-ins, on-chain $BRO claims, and the cyber wheel on Base.",
     "primaryCategory": "games",
-    "tags": ["mining", "base", "rewards"],
-    "tagline": "Build your streak, mine $BRO.",
-    "ogTitle": "Base Bro Mining Onchain",
-    "ogDescription": "Join the Base Bro Mining community on Base. Build daily streaks and earn $BRO rewards.",
+    "tags": ["base", "bro", "mining", "farcaster"],
+    "tagline": "Daily check-ins & wheel spins",
+    "ogTitle": "BaseBro",
+    "ogDescription": "Mine and claim $BRO on Base inside Warpcast.",
+    "castShareUrl": "https://base-bro.vercel.app/api/share",
+    "requiredChains": ["eip155:8453"],
+    "canonicalDomain": "base-bro.vercel.app"
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "BaseBro",
+    "iconUrl": "https://base-bro.vercel.app/logo.png",
+    "homeUrl": "https://base-bro.vercel.app",
+    "imageUrl": "https://base-bro.vercel.app/logo.png",
     "ogImageUrl": "https://base-bro.vercel.app/logo.png",
-    "castShareUrl": "https://base-bro.vercel.app/api/share"
+    "buttonTitle": "Mine $BRO",
+    "splashImageUrl": "https://base-bro.vercel.app/logo.png",
+    "splashBackgroundColor": "#0052FF",
+    "subtitle": "Mine $BRO on Base",
+    "description": "Daily check-ins, on-chain $BRO claims, and the cyber wheel on Base.",
+    "primaryCategory": "games",
+    "tags": ["base", "bro", "mining", "farcaster"],
+    "tagline": "Daily check-ins & wheel spins",
+    "ogTitle": "BaseBro",
+    "ogDescription": "Mine and claim $BRO on Base inside Warpcast.",
+    "castShareUrl": "https://base-bro.vercel.app/api/share",
+    "requiredChains": ["eip155:8453"],
+    "canonicalDomain": "base-bro.vercel.app"
   }
 }
