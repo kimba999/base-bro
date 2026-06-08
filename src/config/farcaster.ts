@@ -5,6 +5,8 @@ export const FARCASTER_APP_NAME = "Base Bro";
 export function buildFcMiniAppEmbed(siteUrl: string) {
   const origin = siteUrl.replace(/\/$/, "");
   const logo = `${origin}/logo.png`;
+  const splash = `${origin}/splash.png`;
+  const splashBg = "#05070d";
   return {
     version: "1",
     imageUrl: logo,
@@ -14,8 +16,8 @@ export function buildFcMiniAppEmbed(siteUrl: string) {
         type: "launch_miniapp",
         name: FARCASTER_APP_NAME,
         url: origin,
-        splashImageUrl: logo,
-        splashBackgroundColor: "#0052FF",
+        splashImageUrl: splash,
+        splashBackgroundColor: splashBg,
       },
     },
   };

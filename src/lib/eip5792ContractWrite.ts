@@ -5,6 +5,10 @@ import {
 } from "wagmi/actions";
 import type { Abi, ContractFunctionName } from "viem";
 
+import {
+  BUILDER_DATA_SUFFIX,
+  BUILDER_DATA_SUFFIX_CAPABILITY,
+} from "@/config/builderCode";
 import { BRO_CHAIN_ID } from "@/config/contracts";
 
 type ContractCall<
@@ -35,6 +39,7 @@ type SendCallsAsync = (variables: {
     args?: readonly unknown[];
     value?: bigint;
   }[];
+  capabilities?: typeof BUILDER_DATA_SUFFIX_CAPABILITY;
 }) => Promise<{ id: string }>;
 
 type WriteContractAsync = (variables: {
@@ -44,6 +49,7 @@ type WriteContractAsync = (variables: {
   args?: readonly unknown[];
   value?: bigint;
   chainId?: typeof BRO_CHAIN_ID;
+  dataSuffix?: typeof BUILDER_DATA_SUFFIX;
 }) => Promise<`0x${string}`>;
 
 /**
@@ -78,6 +84,7 @@ export async function executeContractWrite<
             value: call.value,
           },
         ],
+        capabilities: BUILDER_DATA_SUFFIX_CAPABILITY,
       });
 
       const status = await waitForCallsStatus(config, { id });
@@ -97,6 +104,7 @@ export async function executeContractWrite<
     args: call.args,
     value: call.value,
     chainId: BRO_CHAIN_ID,
+    dataSuffix: BUILDER_DATA_SUFFIX,
   });
 
   const receipt = await waitForTransactionReceipt(config, { hash });

@@ -4,6 +4,7 @@ import { ClaimTokensButton } from "@/components/ClaimTokensButton";
 import { CyberWheel } from "@/components/CyberWheel";
 import { FarcasterAddAppButton } from "@/components/FarcasterAddAppButton";
 import { StreakVisual } from "@/components/StreakVisual";
+import { BUILDER_DATA_SUFFIX } from "@/config/builderCode";
 import {
   BRO_CHAIN,
   BRO_TOKEN_ABI,
@@ -384,6 +385,7 @@ export function ConnectWallet() {
       address: BRO_TOKEN_ADDRESS,
       abi: BRO_TOKEN_ABI,
       functionName: "dailyCheckIn",
+      dataSuffix: BUILDER_DATA_SUFFIX,
     });
   };
 
