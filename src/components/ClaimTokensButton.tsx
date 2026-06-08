@@ -25,6 +25,7 @@ type ClaimTokensButtonProps = {
   supportsBatching: boolean;
   highlight: boolean;
   onConfirmed: () => void;
+  className?: string;
 };
 
 export function ClaimTokensButton({
@@ -33,6 +34,7 @@ export function ClaimTokensButton({
   supportsBatching,
   highlight,
   onConfirmed,
+  className = "",
 }: ClaimTokensButtonProps) {
   const config = useConfig();
   const queryClient = useQueryClient();
@@ -98,7 +100,7 @@ export function ClaimTokensButton({
       type="button"
       onClick={() => void handleClick()}
       disabled={disabled || isPending || amount <= BigInt(0)}
-      className={`font-orbitron w-full rounded-xl border-2 px-4 py-3 text-sm font-semibold text-neon-orange transition ${
+      className={`font-orbitron w-full rounded-xl border-2 px-4 py-3 text-sm font-semibold text-neon-orange transition ${className} ${
         highlight
           ? "border-neon-magenta bg-background shadow-[0_0_30px_rgba(255,0,255,0.45)] hover:shadow-[0_0_40px_rgba(255,0,255,0.6)]"
           : "border-neon-magenta/50 bg-background/80 hover:border-neon-magenta"

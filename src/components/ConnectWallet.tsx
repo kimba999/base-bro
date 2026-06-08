@@ -130,8 +130,7 @@ export function ConnectWallet() {
     isReconnecting,
     isDisconnected,
   } = useConnection();
-  const { supportsBatching, supportsPaymasterService } =
-    useWalletCapabilities();
+  const { supportsBatching } = useWalletCapabilities();
   const chainId = useChainId();
   const { connect, isPending: isConnectPending } = useConnect();
   const [pendingConnectorId, setPendingConnectorId] = useState<string | null>(
@@ -518,11 +517,6 @@ export function ConnectWallet() {
                 EIP-5792 batch
               </span>
             ) : null}
-            {supportsPaymasterService ? (
-              <span className="rounded-full border border-neon-magenta/40 bg-background px-2 py-0.5 text-[11px] text-neon-magenta">
-                Paymaster
-              </span>
-            ) : null}
             <button
               type="button"
               onClick={handleDisconnect}
@@ -544,7 +538,7 @@ export function ConnectWallet() {
           </button>
         ) : null}
 
-        <div className="font-orbitron mb-5 flex items-center justify-between gap-3 rounded-xl border border-neon-magenta/50 bg-background/80 px-3 py-2 text-xs text-neon-cyan sm:px-4 sm:text-sm">
+        <div className="font-orbitron mb-4 flex items-center justify-between gap-3 rounded-xl border border-neon-magenta/50 bg-background/80 px-3 py-2 text-xs text-neon-cyan sm:px-4 sm:text-sm">
           <p className="shrink-0 whitespace-nowrap">
             🔥 Streak:{" "}
             <span className="font-bold text-neon-orange">{streakLabel}</span>
@@ -558,40 +552,40 @@ export function ConnectWallet() {
           </p>
         </div>
 
-        <StreakVisual currentStreak={streakBig} />
-
-        <div className="mb-2 flex flex-wrap justify-center gap-2">
-          {activeTapMultiplier > 1 ? (
-            <span className="rounded-full border border-neon-orange/60 bg-background px-2 py-0.5 text-[10px] font-bold text-neon-orange">
-              TAP x{activeTapMultiplier}
-            </span>
-          ) : null}
-          {streakShieldActive ? (
-            <span className="rounded-full border border-neon-magenta/60 bg-background px-2 py-0.5 text-[10px] font-bold text-neon-magenta">
-              STREAK SHIELD
-            </span>
-          ) : null}
+        <div className="mb-2 flex gap-3">
+          <button
+            type="button"
+            onClick={handleDailyCheckIn}
+            disabled={
+              isCheckInPending || !isCorrectNetwork || !canDailyCheckIn
+            }
+            className="font-orbitron min-w-0 flex-1 rounded-xl border-2 border-neon-magenta bg-background px-3 py-3 text-xs font-semibold text-neon-cyan transition hover:bg-neon-magenta/10 hover:shadow-[0_0_24px_rgba(255,0,255,0.35)] disabled:cursor-not-allowed disabled:border-neon-magenta/20 disabled:bg-background/40 disabled:text-neon-cyan/40 sm:px-4 sm:text-sm"
+          >
+            {isCheckInPending ? "Pending…" : "Daily Check-in"}
+          </button>
+          <ClaimTokensButton
+            unclaimedWhole={unclaimedBz}
+            disabled={!canClaim}
+            supportsBatching={supportsBatching}
+            highlight={unclaimedBz >= requiredTapsForClaim}
+            className="min-w-0 flex-1"
+            onConfirmed={() => {
+              resetClicks();
+              void refetchBalance();
+            }}
+          />
         </div>
 
-        <p className="font-orbitron mb-3 text-center text-lg font-bold text-neon-orange">
-          Unclaimed $BRO: {unclaimedBz}
-        </p>
-
-        <motion.div className="mb-5">
-          <motion.div className="mb-2 flex justify-between text-xs text-neon-cyan/60">
-            <span>Taps to claim</span>
+        {!canDailyCheckIn && isCorrectNetwork && lastCheckInSec > BigInt(0) ? (
+          <p className="mb-4 text-center text-xs text-neon-cyan/60">
+            Следующий чекин через{" "}
             <span className="font-orbitron font-bold text-neon-orange">
-              {tapsTowardClaim}/{requiredTapsForClaim}
+              {formatCountdownSeconds(cooldownRemaining)}
             </span>
-          </motion.div>
-          <motion.div className="h-3 w-full overflow-hidden rounded-full bg-background/60">
-            <motion.div
-              className="h-full bg-gradient-to-r from-neon-magenta to-neon-cyan"
-              animate={{ width: `${claimTapProgressPercent}%` }}
-              transition={{ duration: 0.2 }}
-            />
-          </motion.div>
-        </motion.div>
+          </p>
+        ) : (
+          <div className="mb-4 h-0" aria-hidden />
+        )}
 
         <div className="relative mb-6 flex min-h-[15rem] justify-center py-2">
           <div
@@ -713,48 +707,49 @@ export function ConnectWallet() {
           <p className="mt-2 text-xs text-neon-cyan/50">+2 energy per second</p>
         </motion.div>
 
-        <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:gap-4">
-          <button
-            type="button"
-            onClick={handleDailyCheckIn}
-            disabled={
-              isCheckInPending || !isCorrectNetwork || !canDailyCheckIn
-            }
-            className="font-orbitron flex-1 rounded-xl border-2 border-neon-magenta bg-background px-4 py-3 text-sm font-semibold text-neon-cyan transition hover:bg-neon-magenta/10 hover:shadow-[0_0_24px_rgba(255,0,255,0.35)] disabled:cursor-not-allowed disabled:border-neon-magenta/20 disabled:bg-background/40 disabled:text-neon-cyan/40"
-          >
-            {isCheckInPending ? "Transaction Pending..." : "Daily Check-in"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsWheelOpen(true)}
-            disabled={!isCorrectNetwork}
-            className="font-orbitron flex-1 rounded-xl border-2 border-neon-orange bg-background px-4 py-3 text-sm font-bold tracking-wide text-neon-orange transition hover:bg-neon-orange/10 hover:shadow-[0_0_24px_rgba(255,69,0,0.4)] disabled:cursor-not-allowed disabled:border-neon-magenta/20 disabled:bg-background/40 disabled:text-neon-cyan/40"
-          >
-            [ CYBER SPIN 3/DAY ]
-          </button>
+        <StreakVisual currentStreak={streakBig} />
+
+        <div className="mb-2 flex flex-wrap justify-center gap-2">
+          {activeTapMultiplier > 1 ? (
+            <span className="rounded-full border border-neon-orange/60 bg-background px-2 py-0.5 text-[10px] font-bold text-neon-orange">
+              TAP x{activeTapMultiplier}
+            </span>
+          ) : null}
+          {streakShieldActive ? (
+            <span className="rounded-full border border-neon-magenta/60 bg-background px-2 py-0.5 text-[10px] font-bold text-neon-magenta">
+              STREAK SHIELD
+            </span>
+          ) : null}
         </div>
 
-        {!canDailyCheckIn && isCorrectNetwork && lastCheckInSec > BigInt(0) ? (
-          <p className="mb-3 text-center text-xs text-neon-cyan/60">
-            Следующий чекин через{" "}
-            <span className="font-orbitron font-bold text-neon-orange">
-              {formatCountdownSeconds(cooldownRemaining)}
-            </span>
-          </p>
-        ) : (
-          <div className="mb-3 h-4" aria-hidden />
-        )}
+        <p className="font-orbitron mb-3 text-center text-lg font-bold text-neon-orange">
+          Unclaimed $BRO: {unclaimedBz}
+        </p>
 
-        <ClaimTokensButton
-          unclaimedWhole={unclaimedBz}
-          disabled={!canClaim}
-          supportsBatching={supportsBatching}
-          highlight={unclaimedBz >= requiredTapsForClaim}
-          onConfirmed={() => {
-            resetClicks();
-            void refetchBalance();
-          }}
-        />
+        <motion.div className="mb-4">
+          <motion.div className="mb-2 flex justify-between text-xs text-neon-cyan/60">
+            <span>Taps to claim</span>
+            <span className="font-orbitron font-bold text-neon-orange">
+              {tapsTowardClaim}/{requiredTapsForClaim}
+            </span>
+          </motion.div>
+          <motion.div className="h-3 w-full overflow-hidden rounded-full bg-background/60">
+            <motion.div
+              className="h-full bg-gradient-to-r from-neon-magenta to-neon-cyan"
+              animate={{ width: `${claimTapProgressPercent}%` }}
+              transition={{ duration: 0.2 }}
+            />
+          </motion.div>
+        </motion.div>
+
+        <button
+          type="button"
+          onClick={() => setIsWheelOpen(true)}
+          disabled={!isCorrectNetwork}
+          className="font-orbitron w-full rounded-xl border-2 border-neon-orange bg-background px-4 py-3 text-sm font-bold tracking-wide text-neon-orange transition hover:bg-neon-orange/10 hover:shadow-[0_0_24px_rgba(255,69,0,0.4)] disabled:cursor-not-allowed disabled:border-neon-magenta/20 disabled:bg-background/40 disabled:text-neon-cyan/40"
+        >
+          [ CYBER SPIN 3/DAY ]
+        </button>
       </motion.div>
 
       <AnimatePresence>
