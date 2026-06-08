@@ -492,16 +492,16 @@ export function ConnectWallet() {
 
   return (
     <main
-      className={`flex min-h-screen items-center justify-center bg-background px-4 py-6 text-neon-cyan ${screenGlitch ? "screen-glitch" : ""}`}
+      className={`flex min-h-[100dvh] items-start justify-center bg-background px-3 py-3 text-neon-cyan sm:items-center sm:px-4 sm:py-6 ${screenGlitch ? "screen-glitch" : ""}`}
     >
-      <motion.div className="w-full max-w-xl rounded-3xl border border-neon-magenta/40 bg-background/80 px-8 py-8 shadow-[0_0_60px_rgba(255,0,255,0.2)] backdrop-blur sm:px-10 sm:py-9">
+      <motion.div className="w-full max-w-xl rounded-2xl border border-neon-magenta/40 bg-background/80 px-4 py-4 shadow-[0_0_60px_rgba(255,0,255,0.2)] backdrop-blur sm:rounded-3xl sm:px-10 sm:py-9">
         <h1
-          className="font-orbitron glitch-text mb-6 text-center text-2xl font-bold tracking-wide sm:text-3xl"
+          className="font-orbitron glitch-text mb-3 text-center text-xl font-bold tracking-wide sm:mb-6 sm:text-3xl"
           data-text="Base Bro Mining"
         >
           Base Bro Mining
         </h1>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm text-neon-cyan/80">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-1.5 text-xs text-neon-cyan/80 sm:mb-4 sm:gap-2 sm:text-sm">
           <motion.div className="min-w-0">
             <span>{shortenAddress(address)}</span>
             {inMiniApp && farcasterUser ? (
@@ -538,7 +538,7 @@ export function ConnectWallet() {
           </button>
         ) : null}
 
-        <div className="font-orbitron mb-4 flex items-center justify-between gap-3 rounded-xl border border-neon-magenta/50 bg-background/80 px-3 py-2 text-xs text-neon-cyan sm:px-4 sm:text-sm">
+        <div className="font-orbitron mb-2 flex items-center justify-between gap-2 rounded-lg border border-neon-magenta/50 bg-background/80 px-2.5 py-1.5 text-[11px] text-neon-cyan sm:mb-4 sm:gap-3 sm:rounded-xl sm:px-4 sm:py-2 sm:text-sm">
           <p className="shrink-0 whitespace-nowrap">
             🔥 Streak:{" "}
             <span className="font-bold text-neon-orange">{streakLabel}</span>
@@ -552,23 +552,30 @@ export function ConnectWallet() {
           </p>
         </div>
 
-        <div className="mb-2 flex gap-3">
+        <div className="mb-1.5 flex gap-2">
           <button
             type="button"
             onClick={handleDailyCheckIn}
             disabled={
               isCheckInPending || !isCorrectNetwork || !canDailyCheckIn
             }
-            className="font-orbitron min-w-0 flex-1 rounded-xl border-2 border-neon-magenta bg-background px-3 py-3 text-xs font-semibold text-neon-cyan transition hover:bg-neon-magenta/10 hover:shadow-[0_0_24px_rgba(255,0,255,0.35)] disabled:cursor-not-allowed disabled:border-neon-magenta/20 disabled:bg-background/40 disabled:text-neon-cyan/40 sm:px-4 sm:text-sm"
+            className="font-orbitron min-w-0 flex-1 rounded-lg border-2 border-neon-magenta bg-background px-2 py-2 text-[11px] font-semibold leading-tight text-neon-cyan transition hover:bg-neon-magenta/10 hover:shadow-[0_0_24px_rgba(255,0,255,0.35)] disabled:cursor-not-allowed disabled:border-neon-magenta/20 disabled:bg-background/40 disabled:text-neon-cyan/40 sm:rounded-xl sm:px-3 sm:py-2.5 sm:text-xs"
           >
-            {isCheckInPending ? "Pending…" : "Daily Check-in"}
+            {isCheckInPending ? (
+              "Pending…"
+            ) : (
+              <>
+                <span className="sm:hidden">Check-in</span>
+                <span className="hidden sm:inline">Daily Check-in</span>
+              </>
+            )}
           </button>
           <ClaimTokensButton
             unclaimedWhole={unclaimedBz}
             disabled={!canClaim}
             supportsBatching={supportsBatching}
             highlight={unclaimedBz >= requiredTapsForClaim}
-            className="min-w-0 flex-1"
+            className="min-w-0 flex-1 !rounded-lg !px-2 !py-2 !text-[11px] !leading-tight sm:!rounded-xl sm:!px-3 sm:!py-2.5 sm:!text-xs"
             onConfirmed={() => {
               resetClicks();
               void refetchBalance();
@@ -577,17 +584,15 @@ export function ConnectWallet() {
         </div>
 
         {!canDailyCheckIn && isCorrectNetwork && lastCheckInSec > BigInt(0) ? (
-          <p className="mb-4 text-center text-xs text-neon-cyan/60">
+          <p className="mb-2 text-center text-[10px] text-neon-cyan/60 sm:text-xs">
             Следующий чекин через{" "}
             <span className="font-orbitron font-bold text-neon-orange">
               {formatCountdownSeconds(cooldownRemaining)}
             </span>
           </p>
-        ) : (
-          <div className="mb-4 h-0" aria-hidden />
-        )}
+        ) : null}
 
-        <div className="relative mb-6 flex min-h-[15rem] justify-center py-2">
+        <div className="relative mb-3 flex min-h-[10.5rem] justify-center py-1 sm:mb-6 sm:min-h-[15rem] sm:py-2">
           <div
             className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[min(34rem,130vw)] w-[min(40rem,96vw)] opacity-[0.05] select-none"
             style={{
@@ -616,7 +621,7 @@ export function ConnectWallet() {
             whileHover={coinInteractive ? { scale: 1.02 } : undefined}
             whileTap={coinInteractive ? { scale: 0.95 } : undefined}
             transition={{ type: "spring", stiffness: 480, damping: 28 }}
-            className="relative z-10 h-56 w-56 cursor-pointer overflow-visible rounded-full disabled:cursor-not-allowed disabled:opacity-40"
+            className="relative z-10 h-40 w-40 cursor-pointer overflow-visible rounded-full disabled:cursor-not-allowed disabled:opacity-40 sm:h-56 sm:w-56"
             style={{ boxShadow: coinShadow }}
           >
             <div
@@ -656,7 +661,7 @@ export function ConnectWallet() {
               }}
             >
               <span
-                className="font-orbitron relative text-3xl font-black tracking-[0.14em] sm:text-4xl sm:tracking-[0.16em]"
+                className="font-orbitron relative text-2xl font-black tracking-[0.14em] sm:text-4xl sm:tracking-[0.16em]"
                 style={{
                   color: NEON_ORANGE,
                   textShadow: [
@@ -690,26 +695,28 @@ export function ConnectWallet() {
           </motion.button>
         </div>
 
-        <motion.div className="mb-4">
-          <motion.div className="mb-2 flex justify-between text-xs text-neon-cyan/60">
+        <motion.div className="mb-2 sm:mb-4">
+          <motion.div className="mb-1 flex justify-between text-[10px] text-neon-cyan/60 sm:mb-2 sm:text-xs">
             <span>Energy</span>
             <span className="font-orbitron font-bold text-neon-orange">
               {energy}/{maxEnergy}
             </span>
           </motion.div>
-          <div className="h-3 w-full overflow-hidden rounded-full bg-background/60">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-background/60 sm:h-3">
             <motion.div
               className="h-full bg-gradient-to-r from-neon-magenta to-neon-cyan"
               animate={{ width: `${energyPercent}%` }}
               transition={{ duration: 0.3 }}
             />
           </div>
-          <p className="mt-2 text-xs text-neon-cyan/50">+2 energy per second</p>
+          <p className="mt-1 text-[10px] text-neon-cyan/50 sm:mt-2 sm:text-xs">
+            +2 energy per second
+          </p>
         </motion.div>
 
         <StreakVisual currentStreak={streakBig} />
 
-        <div className="mb-2 flex flex-wrap justify-center gap-2">
+        <div className="mb-1 flex flex-wrap justify-center gap-1.5 sm:mb-2 sm:gap-2">
           {activeTapMultiplier > 1 ? (
             <span className="rounded-full border border-neon-orange/60 bg-background px-2 py-0.5 text-[10px] font-bold text-neon-orange">
               TAP x{activeTapMultiplier}
@@ -722,18 +729,18 @@ export function ConnectWallet() {
           ) : null}
         </div>
 
-        <p className="font-orbitron mb-3 text-center text-lg font-bold text-neon-orange">
+        <p className="font-orbitron mb-1.5 text-center text-sm font-bold text-neon-orange sm:mb-3 sm:text-lg">
           Unclaimed $BRO: {unclaimedBz}
         </p>
 
-        <motion.div className="mb-4">
-          <motion.div className="mb-2 flex justify-between text-xs text-neon-cyan/60">
+        <motion.div className="mb-2 sm:mb-4">
+          <motion.div className="mb-1 flex justify-between text-[10px] text-neon-cyan/60 sm:mb-2 sm:text-xs">
             <span>Taps to claim</span>
             <span className="font-orbitron font-bold text-neon-orange">
               {tapsTowardClaim}/{requiredTapsForClaim}
             </span>
           </motion.div>
-          <motion.div className="h-3 w-full overflow-hidden rounded-full bg-background/60">
+          <motion.div className="h-2 w-full overflow-hidden rounded-full bg-background/60 sm:h-3">
             <motion.div
               className="h-full bg-gradient-to-r from-neon-magenta to-neon-cyan"
               animate={{ width: `${claimTapProgressPercent}%` }}
@@ -746,7 +753,7 @@ export function ConnectWallet() {
           type="button"
           onClick={() => setIsWheelOpen(true)}
           disabled={!isCorrectNetwork}
-          className="font-orbitron w-full rounded-xl border-2 border-neon-orange bg-background px-4 py-3 text-sm font-bold tracking-wide text-neon-orange transition hover:bg-neon-orange/10 hover:shadow-[0_0_24px_rgba(255,69,0,0.4)] disabled:cursor-not-allowed disabled:border-neon-magenta/20 disabled:bg-background/40 disabled:text-neon-cyan/40"
+          className="font-orbitron w-full rounded-lg border-2 border-neon-orange bg-background px-3 py-2 text-xs font-bold tracking-wide text-neon-orange transition hover:bg-neon-orange/10 hover:shadow-[0_0_24px_rgba(255,69,0,0.4)] disabled:cursor-not-allowed disabled:border-neon-magenta/20 disabled:bg-background/40 disabled:text-neon-cyan/40 sm:rounded-xl sm:px-4 sm:py-3 sm:text-sm"
         >
           [ CYBER SPIN 3/DAY ]
         </button>

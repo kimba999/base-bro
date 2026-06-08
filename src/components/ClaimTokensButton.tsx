@@ -120,7 +120,8 @@ export function ClaimTokensButton({
           className="glitch-text glitch-hover inline-block"
           data-text="Claim to wallet"
         >
-          Claim to wallet
+          <span className="sm:hidden">Claim</span>
+          <span className="hidden sm:inline">Claim to wallet</span>
         </span>
       )}
     </button>

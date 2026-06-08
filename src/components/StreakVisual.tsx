@@ -26,11 +26,11 @@ export function StreakVisual({ currentStreak }: StreakVisualProps) {
   const streakZero = currentStreak <= BigInt(0);
 
   return (
-    <motion.div className="mb-5 sm:mb-6">
-      <p className="font-orbitron mb-2 text-center text-xs font-semibold uppercase tracking-wide text-neon-cyan/70">
+    <motion.div className="mb-2 sm:mb-6">
+      <p className="font-orbitron mb-1 text-center text-[10px] font-semibold uppercase tracking-wide text-neon-cyan/70 sm:mb-2 sm:text-xs">
         7-day $BRO streak
       </p>
-      <motion.div className="flex justify-between gap-1 sm:gap-2">
+      <motion.div className="flex justify-between gap-0.5 sm:gap-2">
         {days.map((day) => {
           const state = cellState(day, currentStreak);
           const isSeventh = day === 7;
@@ -40,7 +40,7 @@ export function StreakVisual({ currentStreak }: StreakVisualProps) {
           const inviteFirstDay = streakZero && day === 1;
 
           const baseCircle =
-            "font-orbitron relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold transition sm:h-12 sm:w-12";
+            "font-orbitron relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold transition sm:h-12 sm:w-12 sm:text-sm";
 
           let className = baseCircle;
 
@@ -85,7 +85,7 @@ export function StreakVisual({ currentStreak }: StreakVisualProps) {
                 {isCompleted && !isSeventh ? (
                   <motion.svg
                     key={`check-${day}-${currentStreak.toString()}`}
-                    className="h-5 w-5 text-neon-cyan"
+                    className="h-4 w-4 text-neon-cyan sm:h-5 sm:w-5"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
