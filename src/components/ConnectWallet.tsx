@@ -2,7 +2,6 @@
 
 import { ClaimTokensButton } from "@/components/ClaimTokensButton";
 import { CyberWheel } from "@/components/CyberWheel";
-import { FarcasterAddAppButton } from "@/components/FarcasterAddAppButton";
 import { StreakVisual } from "@/components/StreakVisual";
 import { BUILDER_DATA_SUFFIX } from "@/config/builderCode";
 import {
@@ -51,9 +50,6 @@ const succeededTxHashes = new Set<string>();
 
 /** Must match `BaseBroToken` daily check-in interval after redeploy (24 hours). */
 const CHECKIN_COOLDOWN_SEC = BigInt(86400);
-/** Must match `STREAK_GRACE_PERIOD` in contract (48 hours). */
-const STREAK_GRACE_SEC = BigInt(172800);
-
 const NEON_CYAN = "#00FFFF";
 const NEON_MAGENTA = "#FF00FF";
 const NEON_ORANGE = "#FF4500";
@@ -299,9 +295,6 @@ export function ConnectWallet() {
   const canDailyCheckIn =
     lastCheckInSec === BigInt(0) || nowBig >= nextCheckInAt;
 
-  const streakBrokenUi =
-    lastCheckInSec > BigInt(0) && nowBig > lastCheckInSec + STREAK_GRACE_SEC;
-
   const isCheckInPending = isWritePending || isConfirmingTx;
   const unclaimedBz = clicks;
   const tapsTowardClaim = Math.min(clicks, requiredTapsForClaim);
@@ -540,8 +533,6 @@ export function ConnectWallet() {
           </div>
         </div>
 
-        <FarcasterAddAppButton className="mb-4" />
-
         {!isCorrectNetwork ? (
           <button
             type="button"
@@ -553,28 +544,17 @@ export function ConnectWallet() {
           </button>
         ) : null}
 
-        {streakBrokenUi ? (
-          <div
-            className="mb-4 rounded-xl border border-neon-orange/50 bg-background/90 px-4 py-3 text-center text-sm text-neon-orange"
-            role="status"
-          >
-            Твой стрик обнулился, начни новый цикл!
-          </div>
-        ) : null}
-
-        <div className="font-orbitron mb-5 grid grid-cols-2 gap-3 rounded-2xl border border-neon-magenta/50 bg-background/80 p-4 text-sm text-neon-cyan">
-          <p>
+        <div className="font-orbitron mb-5 flex items-center justify-between gap-3 rounded-xl border border-neon-magenta/50 bg-background/80 px-3 py-2 text-xs text-neon-cyan sm:px-4 sm:text-sm">
+          <p className="shrink-0 whitespace-nowrap">
             🔥 Streak:{" "}
             <span className="font-bold text-neon-orange">{streakLabel}</span>
           </p>
           <p
-            className="max-w-[55%] justify-self-end text-right text-xs leading-snug sm:text-sm"
+            className="min-w-0 truncate text-right"
             title={`${balanceExact} $BRO`}
           >
-            <span className="block text-neon-cyan/60">💰 Total $BRO</span>
-            <span className="break-all text-base font-bold text-neon-orange sm:text-lg">
-              {balanceCompact}
-            </span>
+            💰 Total $BRO{" "}
+            <span className="font-bold text-neon-orange">{balanceCompact}</span>
           </p>
         </div>
 
