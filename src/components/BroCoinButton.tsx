@@ -8,50 +8,20 @@ import {
   useState,
 } from "react";
 
+import {
+  CoinStyleBackdrop,
+  CoinStyleVisual,
+  coinEffectClass,
+  coinShellClass,
+} from "@/components/CoinStyleVisual";
 import type { CoinButtonStyleId } from "@/config/coinButtonStyles";
 import { playCoinTapSound, vibrateCoinTap } from "@/lib/coinTapSound";
-
-const NEON_CYAN = "#00FFFF";
-const NEON_MAGENTA = "#FF00FF";
-const NEON_ORANGE = "#FF4500";
-
-const COIN_SHADOW_REST = [
-  "0 0 0 2px rgba(255,0,255,0.35)",
-  "0 0 0 5px rgba(0,0,0,0.32)",
-  "inset 0 7px 18px rgba(0,255,255,0.18)",
-  "inset 0 -10px 22px rgba(0,0,0,0.44)",
-  "inset 0 0 0 1px rgba(255,0,255,0.12)",
-  "0 22px 44px rgba(0,0,0,0.42)",
-  "0 0 50px rgba(255,0,255,0.35)",
-  "0 0 28px rgba(0,255,255,0.2)",
-].join(", ");
-
-const COIN_SHADOW_HOVER = [
-  "0 0 0 2px rgba(255,0,255,0.55)",
-  "0 0 0 5px rgba(0,0,0,0.28)",
-  "inset 0 8px 20px rgba(0,255,255,0.24)",
-  "inset 0 -10px 22px rgba(0,0,0,0.4)",
-  "inset 0 0 0 1px rgba(255,0,255,0.2)",
-  "0 26px 52px rgba(0,0,0,0.38)",
-  "0 0 68px rgba(255,0,255,0.55)",
-  "0 0 32px rgba(0,255,255,0.35)",
-].join(", ");
-
-const COIN_SHADOW_PRESSED = [
-  "0 0 0 2px rgba(255,0,255,0.45)",
-  "0 0 0 4px rgba(0,0,0,0.28)",
-  "inset 0 3px 12px rgba(0,255,255,0.08)",
-  "inset 0 -14px 28px rgba(0,0,0,0.58)",
-  "inset 0 0 0 1px rgba(0,0,0,0.28)",
-  "0 10px 22px rgba(0,0,0,0.52)",
-  "0 0 34px rgba(255,0,255,0.22)",
-].join(", ");
 
 type Particle = {
   id: number;
   x: number;
   y: number;
-  hue: "cyan" | "orange";
+  hue: "cyan" | "orange" | "magenta";
   angle: number;
 };
 
@@ -66,37 +36,6 @@ type BroCoinButtonProps = {
   onTap: (event: PointerEvent<HTMLButtonElement>) => void;
 };
 
-function shapeClass(styleId: CoinButtonStyleId): string {
-  switch (styleId) {
-    case "hexNode":
-      return "coin-shape-hex";
-    case "energyCapsule":
-      return "h-44 w-28 sm:h-56 sm:w-36 rounded-[2.5rem]";
-    default:
-      return "h-40 w-40 sm:h-56 sm:w-56 rounded-full";
-  }
-}
-
-function effectClass(styleId: CoinButtonStyleId, interactive: boolean): string {
-  if (!interactive) return "";
-  switch (styleId) {
-    case "pulseCore":
-      return "coin-fx-ripple";
-    case "hexNode":
-      return "";
-    case "coinStack3d":
-      return "coin-fx-idle-bounce coin-fx-3d";
-    case "orbitalRing":
-      return "coin-fx-breathe";
-    case "glitchToken":
-      return "coin-fx-glitch-pulse";
-    case "energyCapsule":
-      return "";
-    default:
-      return "";
-  }
-}
-
 export function BroCoinButton({
   styleId,
   interactive,
@@ -109,7 +48,7 @@ export function BroCoinButton({
 }: BroCoinButtonProps) {
   const [coinHover, setCoinHover] = useState(false);
   const [coinPressed, setCoinPressed] = useState(false);
-  const [magnetic, setMagnetic] = useState({ x: 0, y: 0 });
+  const [magnetic, setMagnetic] = useState({ x: 0, y: 0, rotate: 0 });
   const [particles, setParticles] = useState<Particle[]>([]);
   const particleIdRef = useRef(0);
 
@@ -118,30 +57,21 @@ export function BroCoinButton({
     tapsTowardClaim === requiredTapsForClaim - 1 &&
     requiredTapsForClaim > 1;
 
-  const energyGlow =
-    styleId === "energyCapsule"
-      ? Math.max(0.25, energyPercent / 100)
-      : 1;
-
-  const coinShadow =
-    coinPressed && interactive
-      ? COIN_SHADOW_PRESSED
-      : coinHover && interactive
-        ? COIN_SHADOW_HOVER
-        : COIN_SHADOW_REST;
+  const energyGlow = Math.max(0.2, energyPercent / 100);
 
   const spawnParticles = useCallback((x: number, y: number) => {
-    const batch: Particle[] = Array.from({ length: 5 }, (_, i) => ({
+    const hues: Particle["hue"][] = ["cyan", "orange", "magenta"];
+    const batch: Particle[] = Array.from({ length: 8 }, (_, i) => ({
       id: ++particleIdRef.current,
       x,
       y,
-      hue: i % 2 === 0 ? "cyan" : "orange",
-      angle: (i / 5) * Math.PI * 2 + Math.random() * 0.4,
+      hue: hues[i % hues.length]!,
+      angle: (i / 8) * Math.PI * 2 + Math.random() * 0.5,
     }));
     setParticles((prev) => [...prev, ...batch]);
     window.setTimeout(() => {
       setParticles((prev) => prev.filter((p) => !batch.some((b) => b.id === p.id)));
-    }, 520);
+    }, 620);
   }, []);
 
   const handlePointerDown = useCallback(
@@ -150,10 +80,10 @@ export function BroCoinButton({
       setCoinPressed(true);
 
       const rect = event.currentTarget.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-
-      spawnParticles(x, y);
+      spawnParticles(
+        event.clientX - rect.left,
+        event.clientY - rect.top,
+      );
       vibrateCoinTap();
       if (soundEnabled) playCoinTapSound();
       onTap(event);
@@ -169,13 +99,17 @@ export function BroCoinButton({
       const cy = rect.height / 2;
       const dx = (event.clientX - rect.left - cx) / cx;
       const dy = (event.clientY - rect.top - cy) / cy;
-      setMagnetic({ x: dx * 10, y: dy * 10 });
+      setMagnetic({
+        x: dx * 12,
+        y: dy * 12,
+        rotate: dx * 4,
+      });
     },
     [interactive, styleId],
   );
 
   const resetMagnetic = useCallback(() => {
-    setMagnetic({ x: 0, y: 0 });
+    setMagnetic({ x: 0, y: 0, rotate: 0 });
   }, []);
 
   const ctaLabel = almostFull
@@ -184,15 +118,24 @@ export function BroCoinButton({
       ? "TAP TO MINE"
       : "NO ENERGY";
 
+  const shellShadow =
+    styleId === "energyCapsule" && interactive
+      ? [
+          "0 0 0 1px rgba(0,255,255,0.25)",
+          `0 0 ${28 + energyPercent * 0.4}px rgba(255,69,0,${0.2 + energyGlow * 0.5})`,
+          `0 0 ${48 + energyPercent * 0.55}px rgba(0,255,255,${0.12 + energyGlow * 0.35})`,
+          coinPressed
+            ? "0 8px 24px rgba(0,0,0,0.55)"
+            : coinHover
+              ? "0 18px 40px rgba(0,0,0,0.45)"
+              : "0 14px 32px rgba(0,0,0,0.4)",
+        ].join(", ")
+      : undefined;
+
   return (
     <div className="flex flex-col items-center">
       <div className="relative flex min-h-[10.5rem] items-center justify-center sm:min-h-[15rem]">
-        {styleId === "orbitalRing" && interactive ? (
-          <>
-            <span className="coin-orbit coin-orbit-a pointer-events-none absolute z-[5] h-44 w-44 sm:h-56 sm:w-56" aria-hidden />
-            <span className="coin-orbit coin-orbit-b pointer-events-none absolute z-[5] h-52 w-52 sm:h-64 sm:w-64" aria-hidden />
-          </>
-        ) : null}
+        <CoinStyleBackdrop styleId={styleId} interactive={interactive} />
 
         <motion.button
           type="button"
@@ -212,132 +155,59 @@ export function BroCoinButton({
           }}
           whileHover={
             interactive && styleId !== "coinStack3d" && styleId !== "hexNode"
-              ? { scale: 1.02 }
+              ? { scale: 1.03 }
               : undefined
           }
-          whileTap={interactive && styleId !== "hexNode" ? { scale: 0.95 } : undefined}
-          transition={{ type: "spring", stiffness: 480, damping: 28 }}
+          whileTap={interactive && styleId !== "hexNode" ? { scale: 0.94 } : undefined}
+          transition={{ type: "spring", stiffness: 420, damping: 24 }}
           className={[
-            "relative z-10 cursor-pointer overflow-visible disabled:cursor-not-allowed disabled:opacity-40",
-            shapeClass(styleId),
-            effectClass(styleId, interactive),
+            coinShellClass(styleId),
+            coinEffectClass(styleId, interactive),
+            coinPressed ? "coin-state-pressed" : coinHover ? "coin-state-hover" : "",
             almostFull ? "coin-fx-almost-full" : "",
           ].join(" ")}
           style={{
-            boxShadow:
-              styleId === "energyCapsule" && interactive
-                ? [
-                    coinShadow,
-                    `0 0 ${24 + energyPercent * 0.35}px rgba(255,69,0,${0.15 + energyGlow * 0.45})`,
-                    `0 0 ${40 + energyPercent * 0.5}px rgba(0,255,255,${0.08 + energyGlow * 0.25})`,
-                  ].join(", ")
-                : coinShadow,
+            boxShadow: shellShadow,
             transform:
               styleId === "hexNode" && interactive
-                ? `translate(${magnetic.x}px, ${magnetic.y}px)`
+                ? `translate(${magnetic.x}px, ${magnetic.y}px) rotate(${magnetic.rotate}deg)`
                 : undefined,
           }}
         >
-          {styleId === "pulseCore" && interactive ? (
-            <>
-              <span className="coin-ripple coin-ripple-1 pointer-events-none absolute inset-0 rounded-[inherit]" aria-hidden />
-              <span className="coin-ripple coin-ripple-2 pointer-events-none absolute inset-0 rounded-[inherit]" aria-hidden />
-            </>
-          ) : null}
-
-          <div
-            className="absolute inset-0 rounded-[inherit]"
-            style={{
-              background: `radial-gradient(circle at 28% 22%, ${NEON_CYAN} 0%, #00b8b8 14%, ${NEON_MAGENTA} 42%, #8b008b 72%, #05070d 100%)`,
-            }}
-            aria-hidden
+          <CoinStyleVisual
+            styleId={styleId}
+            interactive={interactive}
+            energyPercent={energyPercent}
           />
-          <div
-            className="pointer-events-none absolute inset-0 rounded-[inherit]"
-            style={{
-              background:
-                "radial-gradient(circle at 26% 20%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.12) 22%, transparent 48%)",
-            }}
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-0 rounded-[inherit]"
-            style={{
-              background:
-                "radial-gradient(circle at 78% 88%, rgba(0,0,0,0.22) 0%, transparent 42%)",
-            }}
-            aria-hidden
-          />
-
-          {styleId === "energyCapsule" && interactive ? (
-            <div
-              className="pointer-events-none absolute bottom-2 left-2 right-2 overflow-hidden rounded-full bg-background/50"
-              aria-hidden
-            >
-              <div
-                className="h-1.5 rounded-full bg-gradient-to-r from-neon-magenta to-neon-cyan transition-all duration-300"
-                style={{ width: `${energyPercent}%` }}
-              />
-            </div>
-          ) : null}
-
-          <div
-            className="absolute left-1/2 top-1/2 z-[1] flex h-[62%] w-[62%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full"
-            style={{
-              background: `radial-gradient(circle at 34% 30%, rgba(0,255,255,0.25) 0%, rgba(255,0,255,0.2) 28%, ${NEON_MAGENTA} 58%, #05070d 92%)`,
-              boxShadow: [
-                "inset 0 5px 14px rgba(0,0,0,0.48)",
-                "inset 0 -4px 12px rgba(255,255,255,0.1)",
-                "inset 0 0 0 1px rgba(0,0,0,0.28)",
-                "0 1px 0 rgba(255,255,255,0.12)",
-              ].join(", "),
-            }}
-          >
-            <span
-              className={[
-                "font-orbitron relative text-2xl font-black tracking-[0.14em] sm:text-4xl sm:tracking-[0.16em]",
-                styleId === "glitchToken" ? "glitch-text" : "",
-              ].join(" ")}
-              data-text={styleId === "glitchToken" ? "BRO" : undefined}
-              style={{
-                color: NEON_ORANGE,
-                textShadow: [
-                  "0 1px 0 rgba(255,255,255,0.35)",
-                  "0 -1px 1px rgba(0,0,0,0.55)",
-                  "0 2px 4px rgba(0,0,0,0.45)",
-                  "0 0 16px rgba(255,69,0,0.65)",
-                  "0 0 28px rgba(255,0,255,0.35)",
-                ].join(", "),
-              }}
-            >
-              BRO
-            </span>
-          </div>
 
           {particles.map((p) => {
-            const tx = Math.cos(p.angle) * 36;
-            const ty = Math.sin(p.angle) * 36;
+            const tx = Math.cos(p.angle) * 44;
+            const ty = Math.sin(p.angle) * 44;
+            const color =
+              p.hue === "cyan"
+                ? "bg-neon-cyan shadow-[0_0_8px_#00ffff]"
+                : p.hue === "magenta"
+                  ? "bg-neon-magenta shadow-[0_0_8px_#ff00ff]"
+                  : "bg-neon-orange shadow-[0_0_8px_#ff4500]";
             return (
-            <span
-              key={p.id}
-              className={`coin-particle pointer-events-none absolute z-[4] h-1.5 w-1.5 rounded-full ${
-                p.hue === "cyan" ? "bg-neon-cyan" : "bg-neon-orange"
-              }`}
-              style={{
-                left: p.x,
-                top: p.y,
-                ["--tx" as string]: `${tx}px`,
-                ["--ty" as string]: `${ty}px`,
-              }}
-              aria-hidden
-            />
+              <span
+                key={p.id}
+                className={`coin-particle pointer-events-none absolute z-[6] h-1 w-1 rounded-full ${color}`}
+                style={{
+                  left: p.x,
+                  top: p.y,
+                  ["--tx" as string]: `${tx}px`,
+                  ["--ty" as string]: `${ty}px`,
+                }}
+                aria-hidden
+              />
             );
           })}
 
           {floatingTexts.map((tap) => (
             <span
               key={tap.id}
-              className={`font-orbitron pointer-events-none absolute z-[3] animate-fade-out-up text-lg font-bold drop-shadow-[0_0_10px_rgba(0,255,255,0.85)] ${
+              className={`font-orbitron pointer-events-none absolute z-[5] animate-fade-out-up text-lg font-bold drop-shadow-[0_0_10px_rgba(0,255,255,0.85)] ${
                 tap.id % 2 === 0 ? "text-neon-cyan" : "text-neon-orange"
               }`}
               style={{
@@ -354,11 +224,11 @@ export function BroCoinButton({
 
       <p
         className={[
-          "font-orbitron -mt-1 text-center text-[10px] font-bold uppercase tracking-[0.2em] sm:text-xs",
+          "font-orbitron -mt-1 text-center text-[10px] font-bold uppercase tracking-[0.22em] sm:text-xs",
           almostFull
             ? "animate-pulse text-neon-orange"
             : interactive
-              ? "coin-cta-pulse text-neon-cyan/80"
+              ? "coin-cta-pulse text-neon-cyan/85"
               : "text-neon-cyan/35",
         ].join(" ")}
       >
