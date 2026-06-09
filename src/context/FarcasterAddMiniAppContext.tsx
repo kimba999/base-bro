@@ -15,7 +15,8 @@ import {
 import { useFarcasterMiniApp } from "@/hooks/useFarcasterMiniApp";
 
 const DECLINED_SESSION_KEY = "basebro_add_miniapp_declined";
-const AUTO_PROMPT_DELAY_MS = 800;
+/** Delay after splash + ready() so the native Warpcast add-app sheet is visible. */
+const AUTO_PROMPT_DELAY_MS = 600;
 
 type FarcasterAddMiniAppContextValue = {
   promptAddMiniApp: () => Promise<
@@ -32,7 +33,8 @@ const FarcasterAddMiniAppContext =
   createContext<FarcasterAddMiniAppContextValue | null>(null);
 
 export function FarcasterAddMiniAppProvider({ children }: { children: ReactNode }) {
-  const { inMiniApp, isSdkReady, context, refreshContext } = useFarcasterMiniApp();
+  const { inMiniApp, isSdkReady, isLoading, context, refreshContext } =
+    useFarcasterMiniApp();
   const [isPending, setIsPending] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [localAdded, setLocalAdded] = useState(false);
@@ -112,9 +114,9 @@ export function FarcasterAddMiniAppProvider({ children }: { children: ReactNode 
     }
   }, [inMiniApp, isAdded, isSdkReady, refreshContext]);
 
+  // Standard Farcaster flow: sdk.actions.addMiniApp() after ready() and UI is visible.
   useEffect(() => {
-    if (autoPromptStartedRef.current) return;
-    if (!inMiniApp || !isSdkReady) return;
+    if (!inMiniApp || !isSdkReady || isLoading) return;
     if (isAdded) return;
     if (
       typeof window !== "undefined" &&
@@ -123,9 +125,10 @@ export function FarcasterAddMiniAppProvider({ children }: { children: ReactNode 
       return;
     }
 
-    autoPromptStartedRef.current = true;
-
     const timer = window.setTimeout(() => {
+      if (autoPromptStartedRef.current) return;
+      autoPromptStartedRef.current = true;
+
       void (async () => {
         const result = await promptAddMiniApp();
         if (result.ok === false && result.reason === "rejected") {
@@ -135,7 +138,7 @@ export function FarcasterAddMiniAppProvider({ children }: { children: ReactNode 
     }, AUTO_PROMPT_DELAY_MS);
 
     return () => window.clearTimeout(timer);
-  }, [inMiniApp, isAdded, isSdkReady, promptAddMiniApp]);
+  }, [inMiniApp, isAdded, isLoading, isSdkReady, promptAddMiniApp]);
 
   const value: FarcasterAddMiniAppContextValue = {
     promptAddMiniApp,
