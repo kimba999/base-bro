@@ -17,6 +17,8 @@ const BASE_MAINNET_RPC = "https://mainnet.base.org";
  */
 export const wagmiConfig = createConfig({
   chains: [base],
+  /** Explicit connectors only — avoids duplicate Base wallet in Base App (EIP-6963). */
+  multiInjectedProviderDiscovery: false,
   connectors: [
     farcasterMiniApp(),
     baseAccount({ appName: "Base Bro" }),

@@ -72,10 +72,8 @@ const WALLET_USER_DISCONNECTED_KEY = "basebro_wallet_user_disconnected";
 function connectorLabel(connectorId: string, name: string) {
   const id = connectorId.toLowerCase();
   if (id === "farcaster") return "Warpcast wallet";
-  if (id.includes("base") || name.toLowerCase().includes("base"))
-    return "Base Smart Wallet";
-  if (id.includes("injected") || name.toLowerCase().includes("meta"))
-    return "MetaMask (browser)";
+  if (id === "baseaccount") return "Base Smart Wallet";
+  if (id === "metamask" || id === "metamasksdk") return "MetaMask (browser)";
   return name;
 }
 

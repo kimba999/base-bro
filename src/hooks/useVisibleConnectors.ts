@@ -6,17 +6,44 @@ import { useConnectors } from "wagmi";
 
 import { useFarcasterMiniApp } from "@/hooks/useFarcasterMiniApp";
 
+const OUTSIDE_MINI_APP_IDS = new Set(["baseAccount", "metaMask"]);
+
+function isDuplicateBaseWallet(connector: Connector): boolean {
+  if (connector.id === "baseAccount") return false;
+  const id = connector.id.toLowerCase();
+  const name = connector.name.toLowerCase();
+  return (
+    id.includes("base") ||
+    name.includes("base account") ||
+    name.includes("base wallet") ||
+    name.includes("smart wallet")
+  );
+}
+
+/** Keep one Base option (`baseAccount`) when EIP-6963 or host injects extras. */
+function dedupeBaseWallet(connectors: readonly Connector[]): Connector[] {
+  const hasBaseAccount = connectors.some((c) => c.id === "baseAccount");
+  if (!hasBaseAccount) return [...connectors];
+  return connectors.filter((c) => !isDuplicateBaseWallet(c));
+}
+
 function sortConnectors(
   connectors: readonly Connector[],
   inMiniApp: boolean,
   envLoading: boolean,
 ) {
   const farcaster = connectors.filter((c) => c.id === "farcaster");
-  const others = connectors.filter((c) => c.id !== "farcaster");
+  let others = connectors.filter((c) => c.id !== "farcaster");
 
-  // While host is unknown, show Base + MetaMask immediately (Base App).
+  if (!inMiniApp) {
+    others = others.filter((c) => OUTSIDE_MINI_APP_IDS.has(c.id));
+  }
+
+  others = dedupeBaseWallet(others);
+
+  // While host is unknown, show Base + MetaMask only (not Warpcast in Base App).
   if (envLoading) {
-    return others.length > 0 ? [...others, ...farcaster] : [...connectors];
+    return others;
   }
 
   if (inMiniApp) {
