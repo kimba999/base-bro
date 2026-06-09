@@ -1,6 +1,6 @@
 "use client";
 
-/** Full-screen splash inside the mini app webview (Warpcast native splash is only 200×200). */
+/** Full-screen splash shown after the Warpcast host splash is dismissed via ready(). */
 export function MiniAppSplash() {
   return (
     <div

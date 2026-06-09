@@ -7,7 +7,6 @@ import { WagmiProvider } from "wagmi";
 
 import { WalletAutoReconnect } from "@/components/WalletAutoReconnect";
 import { FarcasterAddMiniAppProvider } from "@/context/FarcasterAddMiniAppContext";
-import { FarcasterMiniAppProvider } from "@/context/FarcasterMiniAppContext";
 import { wagmiConfig } from "@/config/wagmi";
 
 type ProvidersProps = {
@@ -19,19 +18,17 @@ export function Providers({ children, initialState }: ProvidersProps) {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
-    <FarcasterMiniAppProvider>
-      <WagmiProvider
-        config={wagmiConfig as Config}
-        initialState={initialState}
-        reconnectOnMount={false}
-      >
-        <QueryClientProvider client={queryClient}>
-          <FarcasterAddMiniAppProvider>
-            <WalletAutoReconnect />
-            {children}
-          </FarcasterAddMiniAppProvider>
-        </QueryClientProvider>
-      </WagmiProvider>
-    </FarcasterMiniAppProvider>
+    <WagmiProvider
+      config={wagmiConfig as Config}
+      initialState={initialState}
+      reconnectOnMount={false}
+    >
+      <QueryClientProvider client={queryClient}>
+        <FarcasterAddMiniAppProvider>
+          <WalletAutoReconnect />
+          {children}
+        </FarcasterAddMiniAppProvider>
+      </QueryClientProvider>
+    </WagmiProvider>
   );
 }

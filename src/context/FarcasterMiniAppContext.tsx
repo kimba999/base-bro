@@ -40,8 +40,8 @@ type FarcasterMiniAppProviderProps = {
 };
 
 /**
- * Warpcast shows manifest splash as a 200×200 icon. We render a full-screen splash in the
- * webview, call `ready()` after paint, then hide when init finishes.
+ * Dismisses the Warpcast manifest splash immediately via `ready()`, then shows our
+ * full-screen MiniAppSplash until init finishes.
  */
 export function FarcasterMiniAppProvider({
   children,
@@ -69,6 +69,20 @@ export function FarcasterMiniAppProvider({
   useEffect(() => {
     let cancelled = false;
 
+    // Hide the native Warpcast splash (splash.png from manifest) as early as possible.
+    void (async () => {
+      try {
+        await withTimeout(
+          sdk.actions.ready(),
+          MINI_APP_READY_MS,
+          "Farcaster ready() timed out",
+        );
+      } catch {
+        /* Unblock even if ready fails outside a host */
+      }
+      if (!cancelled) setIsHostReady(true);
+    })();
+
     void (async () => {
       let inside = false;
 
@@ -87,7 +101,6 @@ export function FarcasterMiniAppProvider({
       setEnvChecked(true);
 
       if (!inside) {
-        setIsHostReady(true);
         setIsLoading(false);
         return;
       }
@@ -120,28 +133,8 @@ export function FarcasterMiniAppProvider({
     };
   }, []);
 
-  useEffect(() => {
-    if (!inMiniApp || isHostReady) return;
-
-    const frame = requestAnimationFrame(() => {
-      void (async () => {
-        try {
-          await withTimeout(
-            sdk.actions.ready(),
-            MINI_APP_READY_MS,
-            "Farcaster ready() timed out",
-          );
-        } catch {
-          /* Unblock even if ready fails */
-        }
-        setIsHostReady(true);
-      })();
-    });
-
-    return () => cancelAnimationFrame(frame);
-  }, [inMiniApp, isHostReady]);
-
-  const showSplash = inMiniApp && envChecked && isLoading;
+  // Show our splash while detecting the host, then keep it during mini app init.
+  const showSplash = !envChecked || (inMiniApp && isLoading);
   const isSdkReady = !inMiniApp || isHostReady;
 
   const value = useMemo<FarcasterMiniAppContextValue>(

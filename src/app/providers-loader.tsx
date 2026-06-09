@@ -3,6 +3,8 @@
 import dynamic from "next/dynamic";
 import type { State } from "wagmi";
 
+import { FarcasterMiniAppProvider } from "@/context/FarcasterMiniAppContext";
+
 const DynamicProviders = dynamic(
   () => import("./providers").then((m) => m.Providers),
   { ssr: false },
@@ -16,8 +18,10 @@ export function ProvidersShell({
   initialState?: State | undefined;
 }) {
   return (
-    <DynamicProviders initialState={initialState}>
-      {children}
-    </DynamicProviders>
+    <FarcasterMiniAppProvider>
+      <DynamicProviders initialState={initialState}>
+        {children}
+      </DynamicProviders>
+    </FarcasterMiniAppProvider>
   );
 }
