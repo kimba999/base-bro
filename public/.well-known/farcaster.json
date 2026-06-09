@@ -23,6 +23,11 @@
     "ogDescription": "Mine and claim BRO on Base inside Warpcast",
     "castShareUrl": "https://base-bro.vercel.app/api/share",
     "webhookUrl": "https://base-bro.vercel.app/api/webhook",
+    "screenshotUrls": [
+      "https://base-bro.vercel.app/screenshots/screenshot-1.png",
+      "https://base-bro.vercel.app/screenshots/screenshot-2.png",
+      "https://base-bro.vercel.app/screenshots/screenshot-3.png"
+    ],
     "requiredChains": ["eip155:8453"],
     "canonicalDomain": "base-bro.vercel.app"
   },
@@ -45,6 +50,11 @@
     "ogDescription": "Mine and claim BRO on Base inside Warpcast",
     "castShareUrl": "https://base-bro.vercel.app/api/share",
     "webhookUrl": "https://base-bro.vercel.app/api/webhook",
+    "screenshotUrls": [
+      "https://base-bro.vercel.app/screenshots/screenshot-1.png",
+      "https://base-bro.vercel.app/screenshots/screenshot-2.png",
+      "https://base-bro.vercel.app/screenshots/screenshot-3.png"
+    ],
     "requiredChains": ["eip155:8453"],
     "canonicalDomain": "base-bro.vercel.app"
   }
