@@ -74,6 +74,8 @@ function connectorLabel(connectorId: string, name: string) {
   if (id === "farcaster") return "Warpcast wallet";
   if (id === "baseaccount") return "Base Smart Wallet";
   if (id === "metamask" || id === "metamasksdk") return "MetaMask (browser)";
+  if (id === "rabby") return "Rabby Wallet";
+  if (id === "keplr") return "Keplr";
   return name;
 }
 

@@ -6,7 +6,13 @@ import { useConnectors } from "wagmi";
 
 import { useFarcasterMiniApp } from "@/hooks/useFarcasterMiniApp";
 
-const OUTSIDE_MINI_APP_IDS = new Set(["baseAccount", "metaMask"]);
+const MINI_APP_WALLET_IDS = new Set(["baseAccount", "metaMask"]);
+const BROWSER_WALLET_IDS = new Set([
+  "baseAccount",
+  "metaMask",
+  "rabby",
+  "keplr",
+]);
 
 function isDuplicateBaseWallet(connector: Connector): boolean {
   if (connector.id === "baseAccount") return false;
@@ -35,13 +41,11 @@ function sortConnectors(
   const farcaster = connectors.filter((c) => c.id === "farcaster");
   let others = connectors.filter((c) => c.id !== "farcaster");
 
-  if (!inMiniApp) {
-    others = others.filter((c) => OUTSIDE_MINI_APP_IDS.has(c.id));
-  }
-
+  const allowedIds = inMiniApp ? MINI_APP_WALLET_IDS : BROWSER_WALLET_IDS;
+  others = others.filter((c) => allowedIds.has(c.id));
   others = dedupeBaseWallet(others);
 
-  // While host is unknown, show Base + MetaMask only (not Warpcast in Base App).
+  // While host is unknown, show browser/Base App wallets only (not Warpcast).
   if (envLoading) {
     return others;
   }
@@ -54,8 +58,9 @@ function sortConnectors(
 }
 
 /**
- * All wallet options in Warpcast (Warpcast + Base + MetaMask).
- * In Base App / browser: Base Smart Wallet + MetaMask (no Farcaster reconnect hang).
+ * Warpcast: Warpcast + Base + MetaMask.
+ * Browser: Base Smart Wallet, MetaMask, Rabby, Keplr.
+ * Base App: Base Smart Wallet + MetaMask.
  */
 export function useVisibleConnectors() {
   const { inMiniApp, isLoading: envLoading } = useFarcasterMiniApp();
