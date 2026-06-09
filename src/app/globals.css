@@ -219,3 +219,178 @@ body {
     box-shadow: 0 0 0 8px rgb(255 0 255 / 0);
   }
 }
+
+/* —— Bro coin styles & effects —— */
+.coin-shape-hex {
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  height: 10rem;
+  width: 10rem;
+}
+
+@media (min-width: 640px) {
+  .coin-shape-hex {
+    height: 14rem;
+    width: 14rem;
+  }
+}
+
+@keyframes coin-breathe {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 18px rgb(255 0 255 / 0.35))
+      drop-shadow(0 0 8px rgb(0 255 255 / 0.2));
+  }
+  50% {
+    filter: drop-shadow(0 0 32px rgb(255 0 255 / 0.65))
+      drop-shadow(0 0 18px rgb(0 255 255 / 0.45));
+  }
+}
+
+.coin-fx-breathe {
+  animation: coin-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes coin-ripple {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+    box-shadow: 0 0 0 0 rgb(255 69 0 / 0.55);
+  }
+  100% {
+    transform: scale(1.45);
+    opacity: 0;
+    box-shadow: 0 0 0 14px rgb(255 69 0 / 0);
+  }
+}
+
+.coin-fx-ripple .coin-ripple {
+  animation: coin-ripple 2.2s ease-out infinite;
+}
+
+.coin-fx-ripple .coin-ripple-2 {
+  animation-delay: 1.1s;
+}
+
+@keyframes coin-idle-bounce {
+  0%,
+  88%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  92% {
+    transform: translateY(-6px) scale(1.03);
+  }
+  96% {
+    transform: translateY(2px) scale(0.98);
+  }
+}
+
+.coin-fx-idle-bounce {
+  animation: coin-idle-bounce 3s ease-in-out infinite;
+}
+
+.coin-fx-3d {
+  transform-style: preserve-3d;
+  perspective: 600px;
+}
+
+.coin-fx-3d:hover:not(:disabled) {
+  transform: rotateX(8deg) rotateY(-6deg);
+}
+
+@keyframes coin-glitch-pulse {
+  0%,
+  92%,
+  100% {
+    filter: none;
+  }
+  93% {
+    filter: hue-rotate(90deg) saturate(1.5);
+    transform: translate(-2px, 1px);
+  }
+  94% {
+    filter: hue-rotate(-60deg);
+    transform: translate(2px, -1px);
+  }
+  95% {
+    transform: translate(0);
+  }
+}
+
+.coin-fx-glitch-pulse {
+  animation: coin-glitch-pulse 4s steps(2) infinite;
+}
+
+@keyframes coin-almost-full {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+.coin-fx-almost-full {
+  animation: coin-almost-full 0.35s ease-in-out infinite;
+}
+
+@keyframes coin-cta-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.coin-cta-pulse {
+  animation: coin-cta-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes coin-orbit-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.coin-orbit {
+  border: 1px solid rgb(0 255 255 / 0.35);
+  border-radius: 9999px;
+  animation: coin-orbit-spin 8s linear infinite;
+}
+
+.coin-orbit-a {
+  border-color: rgb(255 0 255 / 0.4);
+  animation-duration: 6s;
+}
+
+.coin-orbit-b {
+  border-style: dashed;
+  border-color: rgb(0 255 255 / 0.25);
+  animation-direction: reverse;
+  animation-duration: 10s;
+}
+
+@keyframes coin-particle-burst {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--tx, 0px)), calc(-50% + var(--ty, 0px)))
+      scale(0.15);
+  }
+}
+
+.coin-particle {
+  animation: coin-particle-burst 0.5s ease-out forwards;
+}

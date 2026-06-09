@@ -1,6 +1,8 @@
 "use client";
 
+import { BroCoinButton } from "@/components/BroCoinButton";
 import { ClaimTokensButton } from "@/components/ClaimTokensButton";
+import { CoinStylePicker } from "@/components/CoinStylePicker";
 import { CyberWheel } from "@/components/CyberWheel";
 import { StreakVisual } from "@/components/StreakVisual";
 import { BUILDER_DATA_SUFFIX } from "@/config/builderCode";
@@ -11,6 +13,7 @@ import {
 } from "@/config/contracts";
 import { useFarcasterMiniApp } from "@/hooks/useFarcasterMiniApp";
 import { useClicker } from "@/hooks/useClicker";
+import { useCoinButtonStyle } from "@/hooks/useCoinButtonStyle";
 import { useVisibleConnectors } from "@/hooks/useVisibleConnectors";
 import { useWalletCapabilities } from "@/hooks/useWalletCapabilities";
 import { formatBzCompact, formatBzExact } from "@/lib/bzFormat";
@@ -50,43 +53,6 @@ const succeededTxHashes = new Set<string>();
 
 /** Must match `BaseBroToken` daily check-in interval after redeploy (24 hours). */
 const CHECKIN_COOLDOWN_SEC = BigInt(86400);
-const NEON_CYAN = "#00FFFF";
-const NEON_MAGENTA = "#FF00FF";
-const NEON_ORANGE = "#FF4500";
-
-/** Outer rim: dark outline + bevel highlights + depth + drop + glow */
-const COIN_SHADOW_REST = [
-  "0 0 0 2px rgba(255,0,255,0.35)",
-  "0 0 0 5px rgba(0,0,0,0.32)",
-  "inset 0 7px 18px rgba(0,255,255,0.18)",
-  "inset 0 -10px 22px rgba(0,0,0,0.44)",
-  "inset 0 0 0 1px rgba(255,0,255,0.12)",
-  "0 22px 44px rgba(0,0,0,0.42)",
-  "0 0 50px rgba(255,0,255,0.35)",
-  "0 0 28px rgba(0,255,255,0.2)",
-].join(", ");
-
-const COIN_SHADOW_HOVER = [
-  "0 0 0 2px rgba(255,0,255,0.55)",
-  "0 0 0 5px rgba(0,0,0,0.28)",
-  "inset 0 8px 20px rgba(0,255,255,0.24)",
-  "inset 0 -10px 22px rgba(0,0,0,0.4)",
-  "inset 0 0 0 1px rgba(255,0,255,0.2)",
-  "0 26px 52px rgba(0,0,0,0.38)",
-  "0 0 68px rgba(255,0,255,0.55)",
-  "0 0 32px rgba(0,255,255,0.35)",
-].join(", ");
-
-/** Pressed: stronger lower inset, weaker top highlight, tighter drop (inset look) */
-const COIN_SHADOW_PRESSED = [
-  "0 0 0 2px rgba(255,0,255,0.45)",
-  "0 0 0 4px rgba(0,0,0,0.28)",
-  "inset 0 3px 12px rgba(0,255,255,0.08)",
-  "inset 0 -14px 28px rgba(0,0,0,0.58)",
-  "inset 0 0 0 1px rgba(0,0,0,0.28)",
-  "0 10px 22px rgba(0,0,0,0.52)",
-  "0 0 34px rgba(255,0,255,0.22)",
-].join(", ");
 
 function shortenAddress(address: string) {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -131,6 +97,8 @@ export function ConnectWallet() {
     isDisconnected,
   } = useConnection();
   const { supportsBatching } = useWalletCapabilities();
+  const { styleId, setStyleId, soundEnabled, setSoundEnabled } =
+    useCoinButtonStyle();
   const chainId = useChainId();
   const { connect, isPending: isConnectPending } = useConnect();
   const [pendingConnectorId, setPendingConnectorId] = useState<string | null>(
@@ -176,8 +144,6 @@ export function ConnectWallet() {
   const [nowSec, setNowSec] = useState(() =>
     Math.floor(Date.now() / 1000),
   );
-  const [coinHover, setCoinHover] = useState(false);
-  const [coinPressedLocal, setCoinPressedLocal] = useState(false);
   const [isWheelOpen, setIsWheelOpen] = useState(false);
 
   const handleConnect = useCallback(
@@ -322,13 +288,6 @@ export function ConnectWallet() {
     },
     [coinInteractive, registerClick],
   );
-
-  const coinShadow =
-    coinPressedLocal && coinInteractive
-      ? COIN_SHADOW_PRESSED
-      : coinHover && coinInteractive
-        ? COIN_SHADOW_HOVER
-        : COIN_SHADOW_REST;
 
   useEffect(() => {
     if (!txHash || !isTxConfirmed || !txReceipt) return;
@@ -592,7 +551,14 @@ export function ConnectWallet() {
           </p>
         ) : null}
 
-        <div className="relative mb-3 flex min-h-[10.5rem] justify-center py-1 sm:mb-6 sm:min-h-[15rem] sm:py-2">
+        <CoinStylePicker
+          styleId={styleId}
+          soundEnabled={soundEnabled}
+          onStyleChange={setStyleId}
+          onSoundChange={setSoundEnabled}
+        />
+
+        <div className="relative mb-3 sm:mb-6">
           <div
             className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[min(34rem,130vw)] w-[min(40rem,96vw)] opacity-[0.05] select-none"
             style={{
@@ -603,96 +569,16 @@ export function ConnectWallet() {
             }}
             aria-hidden
           />
-          <motion.button
-            type="button"
-            disabled={!coinInteractive}
-            onPointerEnter={() => coinInteractive && setCoinHover(true)}
-            onPointerLeave={() => {
-              setCoinHover(false);
-              setCoinPressedLocal(false);
-            }}
-            onPointerDown={(event) => {
-              if (!coinInteractive) return;
-              setCoinPressedLocal(true);
-              handleCoinTap(event);
-            }}
-            onPointerUp={() => setCoinPressedLocal(false)}
-            onPointerCancel={() => setCoinPressedLocal(false)}
-            whileHover={coinInteractive ? { scale: 1.02 } : undefined}
-            whileTap={coinInteractive ? { scale: 0.95 } : undefined}
-            transition={{ type: "spring", stiffness: 480, damping: 28 }}
-            className="relative z-10 h-40 w-40 cursor-pointer overflow-visible rounded-full disabled:cursor-not-allowed disabled:opacity-40 sm:h-56 sm:w-56"
-            style={{ boxShadow: coinShadow }}
-          >
-            <div
-              className="absolute inset-0 rounded-full"
-              style={{
-                background: `radial-gradient(circle at 28% 22%, ${NEON_CYAN} 0%, #00b8b8 14%, ${NEON_MAGENTA} 42%, #8b008b 72%, #05070d 100%)`,
-              }}
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-0 rounded-full"
-              style={{
-                background:
-                  "radial-gradient(circle at 26% 20%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.12) 22%, transparent 48%)",
-              }}
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-0 rounded-full"
-              style={{
-                background:
-                  "radial-gradient(circle at 78% 88%, rgba(0,0,0,0.22) 0%, transparent 42%)",
-              }}
-              aria-hidden
-            />
-
-            <div
-              className="absolute left-1/2 top-1/2 z-[1] flex h-[62%] w-[62%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full"
-              style={{
-                background: `radial-gradient(circle at 34% 30%, rgba(0,255,255,0.25) 0%, rgba(255,0,255,0.2) 28%, ${NEON_MAGENTA} 58%, #05070d 92%)`,
-                boxShadow: [
-                  "inset 0 5px 14px rgba(0,0,0,0.48)",
-                  "inset 0 -4px 12px rgba(255,255,255,0.1)",
-                  "inset 0 0 0 1px rgba(0,0,0,0.28)",
-                  "0 1px 0 rgba(255,255,255,0.12)",
-                ].join(", "),
-              }}
-            >
-              <span
-                className="font-orbitron relative text-2xl font-black tracking-[0.14em] sm:text-4xl sm:tracking-[0.16em]"
-                style={{
-                  color: NEON_ORANGE,
-                  textShadow: [
-                    "0 1px 0 rgba(255,255,255,0.35)",
-                    "0 -1px 1px rgba(0,0,0,0.55)",
-                    "0 2px 4px rgba(0,0,0,0.45)",
-                    "0 0 16px rgba(255,69,0,0.65)",
-                    "0 0 28px rgba(255,0,255,0.35)",
-                  ].join(", "),
-                }}
-              >
-                BRO
-              </span>
-            </div>
-
-            {floatingTexts.map((tap) => (
-              <span
-                key={tap.id}
-                className={`font-orbitron pointer-events-none absolute z-[3] animate-fade-out-up text-lg font-bold drop-shadow-[0_0_10px_rgba(0,255,255,0.85)] ${
-                  tap.id % 2 === 0 ? "text-neon-cyan" : "text-neon-orange"
-                }`}
-                style={{
-                  left: tap.x,
-                  top: tap.y,
-                  transform: "translate(-50%, -50%)",
-                }}
-              >
-                +1
-              </span>
-            ))}
-          </motion.button>
+          <BroCoinButton
+            styleId={styleId}
+            interactive={coinInteractive}
+            energyPercent={energyPercent}
+            tapsTowardClaim={tapsTowardClaim}
+            requiredTapsForClaim={requiredTapsForClaim}
+            soundEnabled={soundEnabled}
+            floatingTexts={floatingTexts}
+            onTap={handleCoinTap}
+          />
         </div>
 
         <motion.div className="mb-2 sm:mb-4">
